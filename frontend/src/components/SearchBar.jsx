@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
+import { useNavigate, useSearchParams } from '../navigation'
 
 function SearchBar({ isLoading }) {
   const navigate = useNavigate()

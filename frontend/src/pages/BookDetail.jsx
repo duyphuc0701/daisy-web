@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { ArrowLeft, Download, AlertCircle, Calendar, User, BookOpen, Library } from 'lucide-react'
+import { Link } from '../navigation'
 
-function BookDetail() {
-  const { id } = useParams()
+function BookDetail({ id }) {
   const [book, setBook] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
