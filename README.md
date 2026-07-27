@@ -6,7 +6,7 @@ A fullstack web application for browsing, searching, and managing the DAISY Audi
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React (18), Vite, React Router DOM, Lucide Icons, Vanilla CSS
+- **Frontend**: React (18), Vite, lightweight client-side routing, Lucide Icons, Vanilla CSS
 - **Backend**: Node.js, Express, MySQL2 (`mysql2/promise`), dotenv, CORS
 - **Database**: MySQL 8.0+, containerized via Docker
 - **Tooling**: Docker, npm
@@ -16,7 +16,7 @@ A fullstack web application for browsing, searching, and managing the DAISY Audi
 ## 📋 Prerequisites
 
 Before getting started, make sure you have the following installed on your system:
-- **Node.js**: `v18.x` or higher
+- **Node.js**: `v20.19+` or `v22.12+`
 - **npm**: `v9.x` or higher
 - **Docker & Docker Desktop**: Installed and running
 
@@ -120,14 +120,25 @@ docker run -d \
 ```text
 daisy-web/
 ├── backend/                # Node.js + Express API Server
-│   ├── index.js            # API Entry Point & Route Handlers
-│   ├── db.js               # MySQL Connection Pool
+│   ├── src/
+│   │   ├── config/         # Database configuration
+│   │   ├── controllers/    # HTTP request/response handlers
+│   │   ├── errors/         # API error types
+│   │   ├── middleware/     # Express error handling
+│   │   ├── repositories/   # MySQL queries and result mapping
+│   │   ├── routes/         # REST endpoint definitions
+│   │   ├── app.js          # Injectable Express application
+│   │   └── server.js       # HTTP server startup
+│   ├── test/               # API regression/unit tests
+│   ├── index.js            # Backend entry point
+│   ├── db.js               # Compatibility database export
 │   ├── seed.js             # Database Seeding Script
 │   ├── .env                # Local Environment Configuration
 │   └── package.json        # Backend Dependencies & Scripts
 ├── frontend/               # React + Vite Frontend Application
 │   ├── src/                # Components, Pages, and Assets
 │   ├── public/             # Static Files
+│   ├── test/               # Unit tests
 │   └── package.json        # Frontend Dependencies & Scripts
 ├── database/
 │   └── schema.sql          # MySQL Schema Definition Table & Database Initialization
@@ -143,6 +154,7 @@ daisy-web/
 - `npm run dev` – Starts the development API server with `nodemon` (auto-reload on code changes).
 - `npm start` – Starts the backend API server with standard `node`.
 - `npm run db:seed` – Re-initializes the database tables and populates data from `books.json`.
+- `npm test` – Runs dependency-free API regression tests with Node's built-in test runner.
 
 ### Frontend (`/frontend`)
 - `npm run dev` – Starts the Vite dev server (`http://localhost:5173`).

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { Library, AlertCircle } from 'lucide-react'
 import BookCard from '../components/BookCard'
+import { useSearchParams } from '../navigation'
 
 function Home() {
   const [searchParams] = useSearchParams()

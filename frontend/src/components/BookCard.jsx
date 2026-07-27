@@ -1,6 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { User, Library, Bookmark } from 'lucide-react'
+import { Link } from '../navigation'
 
 function BookCard({ book }) {
   // Use a default image if book has none
