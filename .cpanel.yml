@@ -1,0 +1,17 @@
+---
+deployment:
+  tasks:
+    - "/bin/bash -c 'rm -rf /home/sdytkgxn/public_html/assets'"
+    - "/bin/bash -c 'rm -f /home/sdytkgxn/public_html/index.html'"
+    - "/bin/bash -c 'rm -f /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'cp -R frontend/dist/* /home/sdytkgxn/public_html/'"
+    - "/bin/bash -c 'echo \"<IfModule mod_rewrite.c>\" > /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteEngine On\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteBase /\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteRule ^index\\.html$ - [L]\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteCond %{REQUEST_FILENAME} !-f\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteCond %{REQUEST_FILENAME} !-d\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteCond %{REQUEST_FILENAME} !-l\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteCond %{REQUEST_URI} !^/api\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"  RewriteRule . /index.html [L]\" >> /home/sdytkgxn/public_html/.htaccess'"
+    - "/bin/bash -c 'echo \"</IfModule>\" >> /home/sdytkgxn/public_html/.htaccess'"
