@@ -177,6 +177,8 @@ async function planFromFolder(source, slug, prefix) {
           text: content,
         });
     }
+  if (!parts.size)
+    throw new Error("DAISY package contains no playable audio cues");
   const base = `${prefix}${slug}`;
   const materialized = [...parts.values()].map((part, index) => ({
     ...part,

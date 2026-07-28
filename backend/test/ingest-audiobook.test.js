@@ -78,4 +78,17 @@ describe("DAISY ingestion plan", () => {
       /DAISY reference escapes source folder/,
     );
   });
+
+  it("rejects text-only DAISY packages instead of creating an empty audiobook", async () => {
+    const source = await createDaisyFixture();
+    await fs.writeFile(
+      path.join(source, "part file.smil"),
+      `<?xml version="1.0"?><smil><body><seq><par><text src="book%20file.xml#sentence-1"/></par></seq></body></smil>`,
+    );
+
+    await assert.rejects(
+      planFromFolder(source, "example-book", "audio-books/"),
+      /contains no playable audio cues/,
+    );
+  });
 });
