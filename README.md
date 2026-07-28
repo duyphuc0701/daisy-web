@@ -1,6 +1,6 @@
 # DAISY Audio Library (Fullstack Web Application)
 
-A fullstack web application for browsing, searching, and managing the DAISY Audio Library. 
+A fullstack web application for browsing, searching, and managing the DAISY Audio Library.
 
 ---
 
@@ -16,6 +16,7 @@ A fullstack web application for browsing, searching, and managing the DAISY Audi
 ## 📋 Prerequisites
 
 Before getting started, make sure you have the following installed on your system:
+
 - **Node.js**: `v20.19+` or `v22.12+`
 - **npm**: `v9.x` or higher
 - **Docker & Docker Desktop**: Installed and running
@@ -31,6 +32,7 @@ Follow these steps in order to set up and run the full application locally.
 Open your terminal in the **root directory of the project** (`daisy-web`) and run:
 
 #### PowerShell (Windows)
+
 ```powershell
 docker run -d `
   --name daisy-mysql `
@@ -42,6 +44,7 @@ docker run -d `
 ```
 
 #### Bash / Linux / macOS
+
 ```bash
 docker run -d \
   --name daisy-mysql \
@@ -59,17 +62,20 @@ docker run -d \
 ### 2. Backend Setup
 
 1. Open a terminal and navigate to the `backend` directory:
+
    ```bash
    cd backend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Configure environment variables in `backend/.env`:
-   *(If `.env` does not exist, copy `.env.example` to `.env`)*
+   _(If `.env` does not exist, copy `.env.example` to `.env`)_
+
    ```env
    PORT=5000
    DB_HOST=localhost
@@ -78,17 +84,43 @@ docker run -d \
    DB_NAME=daisy_library
    ```
 
-4. Seed the database with sample book data (`books.json`):
+4. Apply pending database migrations:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+   Check migration status without applying changes:
+
+   ```bash
+   npm run db:migrate:status
+   ```
+
+   The runner records applied migration checksums in `schema_migrations`; do not edit a migration after applying it.
+
+   Import a DAISY audiobook folder (validate first; `--dry-run` makes no R2 or database writes):
+
+   ```bash
+   npm run audiobook:ingest -- --source "/path/to/DAISY-folder" --book-id 1 --slug cay-cam-ngot --dry-run
+   ```
+
+   Omit `--dry-run` after validation to upload audio/transcripts and create its metadata.
+
+5. Seed the database with sample book data (`books.json`):
+
    ```bash
    npm run db:seed
    ```
-   *Expected output:* `Success! Seeded X books successfully.`
 
-5. Start the backend server:
+   _Expected output:_ `Success! Seeded X books successfully.`
+
+6. Start the backend server:
+
    ```bash
    npm run dev
    ```
-   *(Or run `npm start` for production mode)*
+
+   _(Or run `npm start` for production mode)_
 
    The backend API will be available at **`http://localhost:5000`**.
 
@@ -97,16 +129,19 @@ docker run -d \
 ### 3. Frontend Setup
 
 1. Open a **new terminal tab/window** and navigate to the `frontend` directory:
+
    ```bash
    cd frontend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the Vite development server:
+
    ```bash
    npm run dev
    ```
@@ -151,26 +186,42 @@ daisy-web/
 ## 🛠 Available Scripts
 
 ### Backend (`/backend`)
+
 - `npm run dev` – Starts the development API server with `nodemon` (auto-reload on code changes).
 - `npm start` – Starts the backend API server with standard `node`.
 - `npm run db:seed` – Re-initializes the database tables and populates data from `books.json`.
 - `npm test` – Runs dependency-free API regression tests with Node's built-in test runner.
 
 ### Frontend (`/frontend`)
+
 - `npm run dev` – Starts the Vite dev server (`http://localhost:5173`).
 - `npm run build` – Builds production-ready static assets to `dist/`.
 - `npm run preview` – Locally previews the production build.
 
 ---
 
+## 🔊 Authenticated Cloudflare R2 audiobook streaming
+
+The backend exposes authenticated audiobook metadata and playback under:
+
+- `GET /api/books/:bookId/audio`
+- `GET, HEAD /api/books/:bookId/audio/:audioId/stream`
+- `GET /api/books/:bookId/audio/:audioId/transcript?format=json|text`
+
+The R2 bucket is private. Clients receive API URLs only—never bucket/object keys or presigned URLs. The streaming endpoint supports one byte range and returns `206`, `304`, `416`, or `429` as applicable. Audio requires a verified HTTP-only session cookie; configure an exact allowed UI origin and use credentialed cross-origin media requests. See `backend/docs/audiobook-ingestion.md` for the session adapter, production limiter, content-accessibility, and publishing contract.
+
+---
+
 ## ❓ Troubleshooting & FAQs
 
 ### `ECONNREFUSED` / Database Connection Failed
+
 - Verify Docker is running: `docker ps`
 - Check container logs: `docker logs daisy-mysql`
 - Ensure `DB_PASSWORD` in `backend/.env` matches `MYSQL_ROOT_PASSWORD` used in Docker (default: `root`).
 
 ### Managing the MySQL Container
+
 - **Stop container:** `docker stop daisy-mysql`
 - **Start container:** `docker start daisy-mysql`
 - **Reset/Delete container:** `docker rm -f daisy-mysql`
