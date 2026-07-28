@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import QRCode from 'qrcode'
 import { ArrowLeft, Download, AlertCircle, Calendar, User, BookOpen, Library } from 'lucide-react'
 import { Link } from '../navigation'
+import AudiobookPlayer from '../components/AudiobookPlayer'
 
 function BookDetail({ id }) {
   const [book, setBook] = useState(null)
@@ -11,12 +12,12 @@ function BookDetail({ id }) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState(false)
 
-  // Fetch book details
+  // Fetch book metadata (title, author, cover, …)
   useEffect(() => {
     setIsLoading(true)
     setError(null)
     setQrCodeUrl('')
-    
+
     fetch(`/api/books/${id}`)
       .then(res => {
         if (res.status === 404) throw new Error('Không tìm thấy sách yêu cầu.')
@@ -223,6 +224,9 @@ function BookDetail({ id }) {
           </div>
         </div>
       </div>
+
+      {/* Audiobook Player Section – tự fetch /api/books/:id/audio bên trong */}
+      <AudiobookPlayer bookId={id} />
     </div>
   )
 }
