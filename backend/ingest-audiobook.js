@@ -16,6 +16,20 @@ const parser = new XMLParser({
 });
 const array = (value) =>
   value === undefined ? [] : Array.isArray(value) ? value : [value];
+function decodeReference(value) {
+  try {
+    return decodeURIComponent(String(value));
+  } catch {
+    throw new Error(`Invalid percent-encoded DAISY reference: ${value}`);
+  }
+}
+function resolveDaisyPath(source, reference) {
+  const root = path.resolve(source);
+  const resolved = path.resolve(root, reference);
+  if (!resolved.startsWith(`${root}${path.sep}`))
+    throw new Error(`DAISY reference escapes source folder: ${reference}`);
+  return resolved;
+}
 const text = (value) =>
   typeof value === "string"
     ? value
@@ -54,8 +68,8 @@ function smilCues(doc) {
         audio["@_clipEnd"]
       )
         output.push({
-          file: audio["@_src"],
-          target: target["@_src"].split("#")[1],
+          file: decodeReference(audio["@_src"]),
+          target: decodeReference(target["@_src"]).split("#")[1],
           startMs: clock(audio["@_clipBegin"]),
           endMs: clock(audio["@_clipEnd"]),
         });
@@ -78,7 +92,7 @@ function ncxChapters(doc) {
         chapters.push({
           sequence: ++sequence,
           title,
-          file: audio["@_src"],
+          file: decodeReference(audio["@_src"]),
           startMs: clock(audio["@_clipBegin"]),
         });
       visit(point.navPoint);
@@ -129,24 +143,27 @@ async function planFromFolder(source, slug, prefix) {
   const manifest = new Map(
     array(opf.manifest?.item).map((item) => [item["@_id"], item]),
   );
-  const href = (type) =>
-    array(opf.manifest?.item).find((item) => item["@_media-type"] === type)?.[
-      "@_href"
-    ];
+  const href = (type) => {
+    const reference = array(opf.manifest?.item).find(
+      (item) => item["@_media-type"] === type,
+    )?.["@_href"];
+    return reference && decodeReference(reference);
+  };
   const dtbook = href("application/x-dtbook+xml");
   const ncx = href("application/x-dtbncx+xml");
   const spine = array(opf.spine?.itemref)
     .map((item) => manifest.get(item["@_idref"])?.["@_href"])
+    .map((reference) => reference && decodeReference(reference))
     .filter((name) => name?.endsWith(".smil"));
   if (!dtbook || !ncx || !spine.length)
     throw new Error("OPF lacks DTBook, NCX, or SMIL spine");
   const ids = collectIds(
-    parser.parse(await fsp.readFile(path.join(source, dtbook), "utf8")),
+    parser.parse(await fsp.readFile(resolveDaisyPath(source, dtbook), "utf8")),
   );
   const parts = new Map();
   for (const smil of spine)
     for (const cue of smilCues(
-      parser.parse(await fsp.readFile(path.join(source, smil), "utf8")),
+      parser.parse(await fsp.readFile(resolveDaisyPath(source, smil), "utf8")),
     )) {
       if (!parts.has(cue.file))
         parts.set(cue.file, { file: cue.file, segments: [], durationMs: 0 });
@@ -164,7 +181,7 @@ async function planFromFolder(source, slug, prefix) {
   const materialized = [...parts.values()].map((part, index) => ({
     ...part,
     partNumber: index + 1,
-    sourcePath: path.join(source, part.file),
+    sourcePath: resolveDaisyPath(source, part.file),
     r2Key: `${base}/audio/${part.file}`,
     transcriptKey: `${base}/transcripts/${path.basename(part.file, path.extname(part.file))}.json`,
   }));
@@ -173,7 +190,7 @@ async function planFromFolder(source, slug, prefix) {
     base,
     parts: materialized,
     chapters: ncxChapters(
-      parser.parse(await fsp.readFile(path.join(source, ncx), "utf8")),
+      parser.parse(await fsp.readFile(resolveDaisyPath(source, ncx), "utf8")),
     ),
     sourceFiles: names.filter((name) => !name.endsWith(".mp3")),
     language: opf.metadata?.["dc-metadata"]?.Language || "vi-VN",

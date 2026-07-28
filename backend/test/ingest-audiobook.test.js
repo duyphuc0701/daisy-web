@@ -22,21 +22,21 @@ async function createDaisyFixture() {
   await Promise.all([
     fs.writeFile(
       path.join(directory, "book.opf"),
-      `<?xml version="1.0"?><package><metadata><dc-metadata><dc:Language>vi-VN</dc:Language></dc-metadata></metadata><manifest><item id="book" href="book.xml" media-type="application/x-dtbook+xml"/><item id="smil" href="part.smil" media-type="application/smil"/><item id="ncx" href="navigation.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine><itemref idref="smil"/></spine></package>`,
+      `<?xml version="1.0"?><package><metadata><dc-metadata><dc:Language>vi-VN</dc:Language></dc-metadata></metadata><manifest><item id="book" href="book%20file.xml" media-type="application/x-dtbook+xml"/><item id="smil" href="part%20file.smil" media-type="application/smil"/><item id="ncx" href="navigation%20file.ncx" media-type="application/x-dtbncx+xml"/></manifest><spine><itemref idref="smil"/></spine></package>`,
     ),
     fs.writeFile(
-      path.join(directory, "book.xml"),
+      path.join(directory, "book file.xml"),
       `<?xml version="1.0"?><dtbook><bodymatter><p id="sentence-1">Xin chào</p></bodymatter></dtbook>`,
     ),
     fs.writeFile(
-      path.join(directory, "part.smil"),
-      `<?xml version="1.0"?><smil><body><seq><par><text src="book.xml#sentence-1"/><audio src="part0000.mp3" clipBegin="0:00:01.000" clipEnd="0:00:03.500"/></par></seq></body></smil>`,
+      path.join(directory, "part file.smil"),
+      `<?xml version="1.0"?><smil><body><seq><par><text src="book%20file.xml#sentence-1"/><audio src="part%200000.mp3" clipBegin="0:00:01.000" clipEnd="0:00:03.500"/></par></seq></body></smil>`,
     ),
     fs.writeFile(
-      path.join(directory, "navigation.ncx"),
-      `<?xml version="1.0"?><ncx><navMap><navPoint><navLabel><text>Chương 1</text><audio src="part0000.mp3" clipBegin="0:00:01.000" clipEnd="0:00:02.000"/></navLabel></navPoint></navMap></ncx>`,
+      path.join(directory, "navigation file.ncx"),
+      `<?xml version="1.0"?><ncx><navMap><navPoint><navLabel><text>Chương 1</text><audio src="part%200000.mp3" clipBegin="0:00:01.000" clipEnd="0:00:02.000"/></navLabel></navPoint></navMap></ncx>`,
     ),
-    fs.writeFile(path.join(directory, "part0000.mp3"), ""),
+    fs.writeFile(path.join(directory, "part 0000.mp3"), ""),
   ]);
 
   return directory;
@@ -55,14 +55,27 @@ describe("DAISY ingestion plan", () => {
     ]);
     assert.equal(
       plan.parts[0].r2Key,
-      "audio-books/example-book/audio/part0000.mp3",
+      "audio-books/example-book/audio/part 0000.mp3",
     );
     assert.equal(
       plan.parts[0].transcriptKey,
-      "audio-books/example-book/transcripts/part0000.json",
+      "audio-books/example-book/transcripts/part 0000.json",
     );
     assert.deepEqual(plan.chapters, [
-      { sequence: 1, title: "Chương 1", file: "part0000.mp3", startMs: 1000 },
+      { sequence: 1, title: "Chương 1", file: "part 0000.mp3", startMs: 1000 },
     ]);
+  });
+
+  it("rejects decoded references that escape the DAISY folder", async () => {
+    const source = await createDaisyFixture();
+    await fs.writeFile(
+      path.join(source, "book.opf"),
+      `<?xml version="1.0"?><package><manifest><item href="..%2Foutside.xml" media-type="application/x-dtbook+xml"/><item href="navigation%20file.ncx" media-type="application/x-dtbncx+xml"/><item id="smil" href="part%20file.smil" media-type="application/smil"/></manifest><spine><itemref idref="smil"/></spine></package>`,
+    );
+
+    await assert.rejects(
+      planFromFolder(source, "example-book", "audio-books/"),
+      /DAISY reference escapes source folder/,
+    );
   });
 });
