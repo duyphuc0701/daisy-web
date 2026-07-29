@@ -218,6 +218,12 @@ The backend exposes authenticated audiobook metadata and playback under:
 
 The R2 bucket is private. Clients receive API URLs only—never bucket/object keys or presigned URLs. The streaming endpoint supports one byte range and returns `206`, `304`, `416`, or `429` as applicable. Audio requires a verified HTTP-only session cookie; configure an exact allowed UI origin and use credentialed cross-origin media requests. See `backend/docs/audiobook-ingestion.md` for the session adapter, production limiter, content-accessibility, and metadata publication contract.
 
+Until Auth is integrated, backend/UI development can use the fail-safe local
+bypass documented in
+[`backend/docs/audiobook-ui-handoff.md`](./backend/docs/audiobook-ui-handoff.md).
+The bypass requires `NODE_ENV=development`, is rejected in other environments,
+and keeps playback on the real metadata and private R2 streaming path.
+
 ---
 
 ## ❓ Troubleshooting & FAQs

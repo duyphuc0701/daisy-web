@@ -76,6 +76,11 @@ CLOUDFLARE_S3_REGION=auto
 AUDIO_SESSION_SECRET=
 AUDIO_SESSION_COOKIE_NAME=daisy_session
 
+# Chỉ dùng để tích hợp player ở local khi Auth chưa hoàn thành.
+# Backend từ chối bypass nếu NODE_ENV khác development.
+NODE_ENV=
+AUDIO_DEV_BYPASS_AUTH=false
+
 # ── CORS ──────────────────────────────────────────────────────────────
 # Danh sách origin frontend, cách nhau dấu phẩy. KHÔNG dùng * với audio.
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
@@ -89,6 +94,15 @@ AUDIO_STREAM_RATE_LIMIT_WINDOW_MS=60000
 > **Lưu ý:** Nếu `CLOUDFLARE_S3_*` hoặc `AUDIO_SESSION_SECRET` bị trống, các route
 > catalog sách (`/api/books`, `/api/categories`) vẫn hoạt động bình thường. Chỉ các
 > route audio (`/api/books/:id/audio*`) trả về `401 Unauthorized`.
+
+Để UI tích hợp với dữ liệu và luồng R2 thật trước khi Auth hoàn thành:
+
+```bash
+NODE_ENV=development AUDIO_DEV_BYPASS_AUTH=true npm run dev
+```
+
+Xem hợp đồng và checklist bàn giao tại
+[`docs/audiobook-ui-handoff.md`](./docs/audiobook-ui-handoff.md).
 
 ---
 
@@ -191,7 +205,8 @@ backend/
 ├── index.js                    # Entry point
 ├── .env.example                # Template biến môi trường
 ├── docs/
-│   └── audiobook-ingestion.md  # Hướng dẫn metadata publication & security
+│   ├── audiobook-ingestion.md  # Hướng dẫn metadata publication & security
+│   └── audiobook-ui-handoff.md # Hợp đồng bàn giao cho UI
 ├── scripts/
 │   ├── migrate.js              # CLI migration runner
 │   ├── seed.js                 # Nạp sách mẫu (books.json)
