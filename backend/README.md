@@ -116,7 +116,7 @@ Server khởi động tại `http://localhost:<PORT>` (mặc định: `http://lo
 | `npm run db:migrate:status` | Xem trạng thái từng migration |
 | `npm run db:seed` | Nạp dữ liệu sách mẫu vào database |
 | `npm test` | Chạy toàn bộ test suite |
-| `npm run audiobook:ingest` | Ingest thư mục DAISY 2005 lên R2 + DB |
+| `npm run db:audiobooks:publish` | Xác minh R2 read-only và ghi metadata vào DB |
 
 ---
 
@@ -189,12 +189,13 @@ Server khởi động tại `http://localhost:<PORT>` (mặc định: `http://lo
 ```
 backend/
 ├── index.js                    # Entry point
-├── migrate.js                  # CLI migration runner
-├── seed.js                     # Nạp sách mẫu (books.json)
-├── ingest-audiobook.js         # CLI ingest DAISY → R2 + DB
 ├── .env.example                # Template biến môi trường
 ├── docs/
-│   └── audiobook-ingestion.md  # Hướng dẫn chi tiết ingest & security
+│   └── audiobook-ingestion.md  # Hướng dẫn metadata publication & security
+├── scripts/
+│   ├── migrate.js              # CLI migration runner
+│   ├── seed.js                 # Nạp sách mẫu (books.json)
+│   └── publish-audiobook-metadata.js
 └── src/
     ├── server.js               # HTTP server
     ├── app.js                  # Express app factory
@@ -237,22 +238,20 @@ Browser  ─── Cookie: daisy_session=<payload>.<hmac> ──▶
 
 > Xem chi tiết tại [`docs/audiobook-ingestion.md`](./docs/audiobook-ingestion.md)
 
-Cần cấu hình đầy đủ `CLOUDFLARE_S3_*` với credential **read + write**.
+Repository chỉ nhận artifact đã kiểm duyệt
+`database/audiobook-metadata.v1.json`. Production xác minh digest, exact catalog
+ID/title và metadata của 7.977 object R2 bằng credential read-only, rồi publish
+2.926 parts và 1.822 chapters vào DB sau migration.
 
 ```bash
-# Kiểm tra (không upload)
-npm run audiobook:ingest -- \
-  --source "C:/path/to/DAISY-folder" \
-  --book-id 1 \
-  --slug ten-cuon-sach \
-  --dry-run
-
-# Ingest thực tế
-npm run audiobook:ingest -- \
-  --source "C:/path/to/DAISY-folder" \
-  --book-id 1 \
-  --slug ten-cuon-sach
+# Local hoặc production, sau npm run db:migrate
+npm run db:audiobooks:publish -- \
+  --artifact ../database/audiobook-metadata.v1.json \
+  --report .metadata-reports/audiobook-publication.json
 ```
+
+Application restart không tự động ingest metadata. Có thể chạy lại cùng artifact
+an toàn; publication fence và snapshot bảo vệ rollback.
 
 ---
 

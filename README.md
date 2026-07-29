@@ -98,13 +98,12 @@ docker run -d \
 
    The runner records applied migration checksums in `schema_migrations`; do not edit a migration after applying it.
 
-   Import a DAISY audiobook folder (validate first; `--dry-run` makes no R2 or database writes):
+   Ingest the committed audiobook metadata artifact using read-only R2 credentials:
 
    ```bash
-   npm run audiobook:ingest -- --source "/path/to/DAISY-folder" --book-id 1 --slug cay-cam-ngot --dry-run
+   npm run db:migrate
+   npm run db:audiobooks:publish
    ```
-
-   Omit `--dry-run` after validation to upload audio/transcripts and create its metadata.
 
 5. Seed the database with sample book data (`books.json`):
 
@@ -165,9 +164,9 @@ daisy-web/
 │   │   ├── app.js          # Injectable Express application
 │   │   └── server.js       # HTTP server startup
 │   ├── test/               # API regression/unit tests
+│   ├── scripts/            # Migration, seed, and metadata publication CLIs
 │   ├── index.js            # Backend entry point
 │   ├── db.js               # Compatibility database export
-│   ├── seed.js             # Database Seeding Script
 │   ├── .env                # Local Environment Configuration
 │   └── package.json        # Backend Dependencies & Scripts
 ├── frontend/               # React + Vite Frontend Application
@@ -190,6 +189,8 @@ daisy-web/
 - `npm run dev` – Starts the development API server with `nodemon` (auto-reload on code changes).
 - `npm start` – Starts the backend API server with standard `node`.
 - `npm run db:seed` – Re-initializes the database tables and populates data from `books.json`.
+- `npm run db:migrate` – Applies pending schema and reviewed catalog migrations.
+- `npm run db:audiobooks:publish` – Verifies R2 metadata and publishes the committed artifact.
 - `npm test` – Runs dependency-free API regression tests with Node's built-in test runner.
 
 ### Frontend (`/frontend`)
@@ -200,6 +201,13 @@ daisy-web/
 
 ---
 
+## 📚 Audiobook metadata release
+
+`database/audiobook-metadata.v1.json` is the only reviewed audiobook release
+input in this repository. Deployments validate its digest and expected read-only
+R2 metadata, then publish parts and chapters transactionally after migrations.
+Application restart does not ingest the artifact automatically.
+
 ## 🔊 Authenticated Cloudflare R2 audiobook streaming
 
 The backend exposes authenticated audiobook metadata and playback under:
@@ -208,7 +216,7 @@ The backend exposes authenticated audiobook metadata and playback under:
 - `GET, HEAD /api/books/:bookId/audio/:audioId/stream`
 - `GET /api/books/:bookId/audio/:audioId/transcript?format=json|text`
 
-The R2 bucket is private. Clients receive API URLs only—never bucket/object keys or presigned URLs. The streaming endpoint supports one byte range and returns `206`, `304`, `416`, or `429` as applicable. Audio requires a verified HTTP-only session cookie; configure an exact allowed UI origin and use credentialed cross-origin media requests. See `backend/docs/audiobook-ingestion.md` for the session adapter, production limiter, content-accessibility, and publishing contract.
+The R2 bucket is private. Clients receive API URLs only—never bucket/object keys or presigned URLs. The streaming endpoint supports one byte range and returns `206`, `304`, `416`, or `429` as applicable. Audio requires a verified HTTP-only session cookie; configure an exact allowed UI origin and use credentialed cross-origin media requests. See `backend/docs/audiobook-ingestion.md` for the session adapter, production limiter, content-accessibility, and metadata publication contract.
 
 ---
 

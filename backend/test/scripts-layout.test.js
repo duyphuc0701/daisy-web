@@ -93,4 +93,20 @@ describe("backend operational scripts layout", () => {
       assert.doesNotMatch(source, /CLOUDFLARE_S3_INGEST_/);
     }
   });
+
+  it("keeps application documentation metadata-only", () => {
+    const markdown = [
+      path.join(applicationRoot, "README.md"),
+      path.join(backendRoot, "README.md"),
+      ...filesUnder(path.join(backendRoot, "docs"), (name) =>
+        name.endsWith(".md"),
+      ),
+    ];
+    for (const file of markdown)
+      assert.doesNotMatch(
+        fs.readFileSync(file, "utf8"),
+        /\bupload(?:s|ed|ing)?\b/i,
+        `${path.relative(applicationRoot, file)} documents an external operation`,
+      );
+  });
 });

@@ -1,47 +1,128 @@
-# Audiobook ingestion and authenticated playback
+# Audiobook metadata publication
 
-## Security boundary
+## Application boundary
 
-R2 must remain private. The API stores full object keys internally in `audiobook_parts.r2_key`, validates that every key belongs to `CLOUDFLARE_S3_FOLDER_NAME`, and never sends keys, bucket names, or presigned URLs to clients.
+The application repository accepts one reviewed release input:
+`database/audiobook-metadata.v1.json`.
 
-The streaming routes require a verified principal. The included `createSessionAuthenticator` validates a short-lived HMAC-signed `daisy_session` cookie (`AUDIO_SESSION_COOKIE_NAME`) using `AUDIO_SESSION_SECRET`; its issuer must create payloads with a non-empty `sub`, integer `exp` (Unix seconds), and optional string `roles`. It is an adapter boundary: production may inject the real identity-provider/session verifier through `createApp({ authenticateRequest })`. Do not add a login endpoint or trust a request header for identity.
+It contains the complete publisher-ready database payload, expected read-only R2
+object descriptors, per-book revision fences, and a SHA-256 digest over the
+canonical document. The application contains no DAISY source processing or R2
+object-write tooling.
 
-For cross-origin browser playback, the frontend must use a secure HTTP-only cookie and `<audio crossorigin="use-credentials">`; configure an exact frontend origin in `CORS_ALLOWED_ORIGINS`. Never use `*` for credentialed audio routes.
+Application restart never imports metadata automatically. Local and production
+environments run the metadata command explicitly after migrations.
 
-## Cost controls
+## Reviewed release contract
 
-The included limiter is deliberately process-local and is safe for development/single-instance fallback only. The default access policy denies playback; production deployments must inject an entitlement policy and replicas **must inject a shared or edge-backed limiter** through `createApp({ audioRateLimiter })`, keyed by authenticated user plus a secondary abuse signal, before enabling public traffic. Configure `AUDIO_MAX_CONCURRENT_STREAMS_PER_USER`, `AUDIO_STREAM_RATE_LIMIT_MAX`, and `AUDIO_STREAM_RATE_LIMIT_WINDOW_MS`; monitor 429s, R2 requests, bytes streamed, and disconnects.
+The committed artifact currently validates to:
 
-## Publish checklist
+- 73 books
+- 2,926 audio parts
+- 1,822 chapters
+- 7,977 expected R2 objects
+- 4,107,459,220 bytes
 
-1. Upload an `audio/mpeg` object and transcript under the configured folder prefix using a read/write ingestion credential. Runtime credentials are read-only.
-2. Run an R2 `HeadObject`, record the private key, byte length, ETag, duration, BCP 47 language, narrator, and ordered parts/chapters in the additive tables.
-3. Store a UTF-8 timed-text JSON transcript as `{ "segments": [{ "startMs": 0, "endMs": 1, "text": "…" }] }`. Segments must be monotonically ordered and include relevant speaker/non-speech information.
-4. Set `published_at` only after range, transcript, and metadata checks pass. Unpublish by clearing `published_at`; never rely on object obscurity.
-5. Use a non-production private bucket for staging checks. Do not run smoke tests against production credentials.
+Every part and transcript key must remain inside the configured R2 prefix and the
+book's immutable revision path. Artifact digest, summary, IDs, titles, revisions,
+object metadata, dense part numbers, and dense chapter sequences fail closed.
 
-## DAISY ingestion command
+## Scripts
 
-The repository includes a repeatable importer for DAISY 2005 folders. It preserves original MP3 parts, derives their order from the OPF/SMIL spine, converts DTBook + SMIL text cues into the JSON transcript contract, derives chapter starts from NCX, uploads private R2 objects, and upserts the matching MySQL rows.
+Application maintenance entry points live under `backend/scripts/`:
 
-Run a no-write validation first:
+- `scripts/migrate.js` — schema and reviewed catalog migrations
+- `scripts/seed.js` — destructive local catalog bootstrap
+- `scripts/publish-audiobook-metadata.js` — local/production metadata ingestion
 
-```bash
-cd backend
-npm run audiobook:ingest -- \
-  --source "/path/to/DAISY-folder" \
-  --book-id 1 \
-  --slug cay-cam-ngot \
-  --dry-run
+Use package commands rather than invoking these files directly.
+
+## Credentials
+
+Metadata verification and runtime playback use read-only R2 credentials:
+
+```dotenv
+CLOUDFLARE_S3_API=https://<account-id>.r2.cloudflarestorage.com
+CLOUDFLARE_S3_ACCESS_KEY_ID=
+CLOUDFLARE_S3_SECRET_ACCESS_KEY=
+CLOUDFLARE_S3_BUCKET_NAME=
+CLOUDFLARE_S3_FOLDER_NAME=audio-books
+CLOUDFLARE_S3_REGION=auto
 ```
 
-After applying the audiobook migration and verifying the plan, omit `--dry-run` to upload and publish:
+The deployed application must not receive object-write credentials.
+
+## Local metadata publication
+
+Use the same artifact and command intended for production:
 
 ```bash
-npm run audiobook:ingest -- \
-  --source "/path/to/DAISY-folder" \
-  --book-id 1 \
-  --slug cay-cam-ngot
+cd daisy-web/backend
+npm run db:migrate
+npm run db:migrate:status
+
+npm run db:audiobooks:publish -- \
+  --artifact ../database/audiobook-metadata.v1.json \
+  --concurrency 4 \
+  --report .metadata-reports/local-publication.json
 ```
 
-The command writes `audio-books/cay-cam-ngot/audio/*.mp3`, generated `transcripts/*.json`, and an optional private `source/` copy. It needs a separate R2 credential with Object Read & Write permission; production playback must continue using the read-only runtime credential. Re-running the command updates the existing parts by `(book_id, part_number)` and replaces chapters for those parts.
+Reapplying the same artifact is idempotent and reports `already_published`.
+
+`npm run db:seed` truncates the `books` table and is only for disposable local
+databases. It is not a deployment step.
+
+## Production deployment
+
+```bash
+cd /path/to/daisy-web/backend
+npm ci --omit=dev
+npm run db:migrate
+npm run db:migrate:status
+
+npm run db:audiobooks:publish -- \
+  --artifact ../database/audiobook-metadata.v1.json \
+  --concurrency 4 \
+  --report .metadata-reports/production-publication.json
+```
+
+Restart the cPanel/Passenger application only after the publication report
+completes successfully.
+
+The metadata command:
+
+1. validates artifact schema, totals, prefix, and digest;
+2. validates exact target book IDs and titles;
+3. verifies every expected object through read-only `HeadObject`;
+4. locks the per-book publication fence;
+5. inserts or updates parts and replaces chapters transactionally;
+6. advances the revision fence only after successful publication;
+7. reconciles revision, part count, and chapter count.
+
+The reviewed catalog migration inserts IDs 202–205 non-destructively and fails
+if an existing row uses a conflicting exact title.
+
+## Failure and retry behavior
+
+Publication is transactional per book. If a run stops:
+
+- already-published revisions reconcile without mutation;
+- the same artifact can be rerun safely;
+- a different current revision fails as stale;
+- R2 verification happens before mutation of the affected book.
+
+Database rollback uses the publication fence and stored snapshot. R2 remains
+read-only from this repository.
+
+## Completion gate
+
+A release is complete only when:
+
+- the committed artifact validates to the reviewed totals;
+- production migrations are applied;
+- metadata publication reports 73 published/already-published books and zero
+  failures;
+- database reconciliation matches every artifact revision;
+- authenticated catalog, `HEAD`, full `GET`, range `206`, conditional `304`,
+  invalid range `416`, transcripts, and frontend chapter boundaries pass;
+- independent architecture and critical verification approve the release.
