@@ -2410,5 +2410,53 @@
         "category": "Tự truyện",
         "downloadUrl": "https://drive.google.com/uc?export=download&id=16DP_rytOo_lWB7BPQoIgSsvY8QInMoHT",
         "viewUrl": "https://drive.google.com/file/d/16DP_rytOo_lWB7BPQoIgSsvY8QInMoHT/view?usp=drive_link"
+    },
+    {
+        "id": 202,
+        "title": "Cuộc cách mạng một cọng rơm",
+        "author": "Masanobu Fukuoka",
+        "image": null,
+        "description": "Tác phẩm về nông nghiệp tự nhiên và triết lý sống thuận theo tự nhiên.",
+        "publisher": "NXB Tổng hợp Thành phố Hồ Chí Minh",
+        "year": "2015",
+        "category": "Khoa học - Môi trường",
+        "downloadUrl": null,
+        "viewUrl": null
+    },
+    {
+        "id": 203,
+        "title": "Dữ liệu lớn - Big data",
+        "author": "Viktor Mayer-Schönberger và Kenneth Cukier",
+        "image": null,
+        "description": "Khảo sát cách dữ liệu lớn thay đổi cách con người phân tích, dự đoán và ra quyết định.",
+        "publisher": "NXB Trẻ",
+        "year": "2014",
+        "category": "Khoa học - Công nghệ",
+        "downloadUrl": null,
+        "viewUrl": null
+    },
+    {
+        "id": 204,
+        "title": "Khuyến học",
+        "author": "Fukuzawa Yukichi",
+        "image": null,
+        "description": "Tác phẩm bàn về tinh thần tự lập, bình đẳng và vai trò của giáo dục trong hiện đại hóa xã hội.",
+        "publisher": null,
+        "year": null,
+        "category": "Giáo dục",
+        "downloadUrl": null,
+        "viewUrl": null
+    },
+    {
+        "id": 205,
+        "title": "Sự tích con nhái",
+        "author": "Nguyễn Đổng Chi",
+        "image": null,
+        "description": "Truyện cổ tích Việt Nam kể về nguồn gốc con nhái.",
+        "publisher": null,
+        "year": null,
+        "category": "Truyện dân gian Việt Nam",
+        "downloadUrl": null,
+        "viewUrl": null
     }
 ]

@@ -112,4 +112,19 @@ describe("migration runner", () => {
     );
   });
 
+  it("keeps reviewed missing catalog rows in a non-destructive idempotent migration", async () => {
+    const sql = await fs.readFile(
+      path.join(
+        __dirname,
+        "../../database/migrations/20260729_add_audiobook_catalog_books.sql",
+      ),
+      "utf8",
+    );
+    assert.match(sql, /INSERT INTO books/i);
+    assert.doesNotMatch(sql, /TRUNCATE|DELETE FROM books/i);
+    for (const id of [202, 203, 204, 205])
+      assert.match(sql, new RegExp(`\\b${id}\\b`));
+    assert.match(sql, /ON DUPLICATE KEY UPDATE/i);
+    assert.match(sql, /BINARY title = BINARY VALUES\(title\)/i);
+  });
 });
