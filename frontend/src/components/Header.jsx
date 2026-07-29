@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronDown, BookOpen } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { Link, NavLink, useNavigate } from '../navigation'
 import SearchBar from './SearchBar'
 
