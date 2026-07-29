@@ -9,7 +9,7 @@ dotenv.config();
 const MIGRATIONS_TABLE = "schema_migrations";
 const DEFAULT_MIGRATIONS_DIRECTORY = path.join(
   __dirname,
-  "../database/migrations",
+  "../../database/migrations",
 );
 
 async function readMigrations(
@@ -116,6 +116,7 @@ async function migrationStatus({
 function createConnection() {
   return mysql.createConnection({
     host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "daisy_library",

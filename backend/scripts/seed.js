@@ -8,6 +8,7 @@ dotenv.config();
 
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'daisy_library',
@@ -22,6 +23,7 @@ async function seed() {
     // Connect without database selected first to create it if it doesn't exist
     connection = await mysql.createConnection({
       host: dbConfig.host,
+      port: dbConfig.port,
       user: dbConfig.user,
       password: dbConfig.password,
     });
@@ -47,7 +49,7 @@ async function seed() {
     `);
 
     // Read books.json
-    const booksJsonPath = path.join(__dirname, '../books.json');
+    const booksJsonPath = path.join(__dirname, '../../books.json');
     if (!fs.existsSync(booksJsonPath)) {
       throw new Error(`books.json file not found at ${booksJsonPath}`);
     }

@@ -4,7 +4,10 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { afterEach, describe, it } = require("node:test");
-const { migrationStatus, runMigrations } = require("../migrate");
+const {
+  migrationStatus,
+  runMigrations,
+} = require("../scripts/migrate");
 
 const directories = [];
 afterEach(async () =>
@@ -108,4 +111,5 @@ describe("migration runner", () => {
       ],
     );
   });
+
 });
