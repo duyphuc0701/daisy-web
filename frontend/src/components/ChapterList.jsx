@@ -1,12 +1,12 @@
 /**
  * ChapterList.jsx
- * Danh sách chương của một phần (part).
+ * Danh sách chương đã được flatten từ các phần (part).
  * Highlight chương đang phát, nhảy đến chương khi nhấn.
  *
  * Props:
- *   chapters        – Chapter[]   { id, title, startMs, endMs }
- *   partDurationMs  – number      tổng thời lượng của part (ms), dùng làm endMs fallback
- *   activeChapterId – number|null id của chương đang active
+ *   chapters        – Chapter[]   { id, title, startMs, endMs, partTitle?, partDurationMs? }
+ *   partDurationMs  – number      thời lượng fallback (ms)
+ *   activeChapterId – string|null khóa của chương đang active
  *   onChapterClick  – (chapter) => void
  *   formatTime      – (secs: number) => string
  */
@@ -29,22 +29,25 @@ function ChapterList({ chapters, partDurationMs, activeChapterId, onChapterClick
       <div className="chapters-title-bar">Danh sách chương</div>
       <div className="chapters-list" role="list" aria-label="Danh sách chương">
         {chapters.map((chapter) => {
-          const isActive = activeChapterId === chapter.id
+          const chapterKey = chapter.playbackKey ?? chapter.id
+          const isActive = activeChapterId === chapterKey
+          const fallbackDurationMs = chapter.partDurationMs ?? partDurationMs
           const endMs = chapter.endMs !== null && chapter.endMs !== undefined
             ? chapter.endMs
-            : partDurationMs
+            : fallbackDurationMs
           const durationSecs = Math.max(0, (endMs - chapter.startMs) / 1000)
+          const displayTitle = chapter.title
 
           return (
             <button
-              key={chapter.id}
+              key={chapterKey}
               role="listitem"
               onClick={() => onChapterClick(chapter)}
               className={`chapter-item-btn${isActive ? ' active' : ''}`}
               aria-current={isActive ? 'true' : undefined}
-              aria-label={`${chapter.title} – ${formatTime(durationSecs)}`}
+              aria-label={`${displayTitle} - ${formatTime(durationSecs)}`}
             >
-              <span className="chapter-title-text">{chapter.title}</span>
+              <span className="chapter-title-text">{displayTitle}</span>
               <span className="chapter-duration">{formatTime(durationSecs)}</span>
             </button>
           )

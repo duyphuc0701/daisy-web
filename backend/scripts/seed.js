@@ -14,6 +14,28 @@ const dbConfig = {
   database: process.env.DB_NAME || 'daisy_library',
 };
 
+async function tableExists(connection, tableName) {
+  const [rows] = await connection.query(
+    `
+      SELECT 1
+      FROM information_schema.tables
+      WHERE table_schema = ?
+        AND table_name = ?
+      LIMIT 1
+    `,
+    [dbConfig.database, tableName]
+  );
+
+  return rows.length > 0;
+}
+
+async function clearTableIfExists(connection, tableName) {
+  if (await tableExists(connection, tableName)) {
+    await connection.query(`DELETE FROM \`${tableName}\``);
+    await connection.query(`ALTER TABLE \`${tableName}\` AUTO_INCREMENT = 1`);
+  }
+}
+
 async function seed() {
   console.log('Starting database seeding...');
   console.log('Database configuration:', { ...dbConfig, password: dbConfig.password ? '****' : '(none)' });
@@ -57,9 +79,12 @@ async function seed() {
     const booksData = JSON.parse(fs.readFileSync(booksJsonPath, 'utf8'));
     console.log(`Read ${booksData.length} books from books.json.`);
 
-    // Clear existing data
-    console.log('Clearing existing books...');
-    await connection.query('TRUNCATE TABLE books');
+    // Clear existing local catalog data in foreign-key order.
+    console.log('Clearing existing local catalog data...');
+    await clearTableIfExists(connection, 'audiobook_chapters');
+    await clearTableIfExists(connection, 'audiobook_publications');
+    await clearTableIfExists(connection, 'audiobook_parts');
+    await clearTableIfExists(connection, 'books');
 
     // Insert books
     console.log('Inserting books into the database...');
@@ -88,6 +113,7 @@ async function seed() {
     console.log(`Success! Seeded ${insertedCount} books successfully.`);
   } catch (error) {
     console.error('Error seeding database:', error);
+    process.exitCode = 1;
   } finally {
     if (connection) {
       await connection.end();

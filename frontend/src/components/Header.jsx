@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, MoonStar, SunMedium } from 'lucide-react'
 import { Link, NavLink, useNavigate } from '../navigation'
 import SearchBar from './SearchBar'
 
-function Header() {
+function Header({ theme, onToggleTheme }) {
   const navigate = useNavigate()
   const [categories, setCategories] = useState([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -102,6 +102,16 @@ function Header() {
 
           {/* Search Input Bar */}
           <SearchBar />
+
+          <button
+            type="button"
+            className="theme-toggle-btn"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Chuyển sang light mode' : 'Chuyển sang dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? <SunMedium size={18} /> : <MoonStar size={18} />}
+          </button>
         </div>
       </div>
     </header>

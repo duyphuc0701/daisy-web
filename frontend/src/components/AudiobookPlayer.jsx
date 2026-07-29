@@ -13,7 +13,7 @@
  *   bookId – string | number  (id của cuốn sách, dùng để fetch catalog)
  */
 import React, { useState, useEffect, useRef } from 'react'
-import { Headphones, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Headphones, AlertCircle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import PlayerControls from './PlayerControls'
 import PlayerTimeline from './PlayerTimeline'
 import VolumeControl from './VolumeControl'
@@ -41,13 +41,40 @@ function findActiveChapter(chapters, currentMs, partDurationMs) {
   }) ?? null
 }
 
+/** Biến parts thành hàng đợi phát nội bộ, giữ nguyên contract backend. */
+function buildPlaybackQueue(parts = []) {
+  return parts.map((part, partIndex) => ({
+    ...part,
+    partIndex,
+    chapters: Array.isArray(part.chapters) ? part.chapters : [],
+  }))
+}
+
+/** Flatten parts[].chapters để điều hướng qua toàn bộ sách nói. */
+function flattenChapters(queue) {
+  return queue.flatMap((part) =>
+    part.chapters.map((chapter) => ({
+      ...chapter,
+      playbackKey: `${part.partIndex}:${chapter.id ?? chapter.sequence ?? chapter.startMs}`,
+      partId: part.id,
+      partIndex: part.partIndex,
+      partTitle: part.title || `Phần ${part.partNumber ?? part.partIndex + 1}`,
+      partDurationMs: part.durationMs,
+    }))
+  )
+}
+
+function isIndexChapter(chapter) {
+  return /_000(?:\.[^.]+)?$/.test(chapter.partTitle ?? '')
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 function AudiobookPlayer({ bookId }) {
   // ── API state ──
   const [catalog, setCatalog] = useState(null)          // dữ liệu từ /api/books/:id/audio
   const [fetchError, setFetchError] = useState(null)    // lỗi server thực sự (5xx)
-  const [audioUnavailable, setAudioUnavailable] = useState(false) // 401/403/404/no-parts
+  const [audioUnavailable, setAudioUnavailable] = useState(null) // 401/403/404/no-parts
   const [isFetching, setIsFetching] = useState(true)
 
   // ── Player state ──
@@ -63,6 +90,8 @@ function AudiobookPlayer({ bookId }) {
   const [showChapters, setShowChapters] = useState(true)
 
   const audioRef = useRef(null)
+  const pendingChapterRef = useRef(null)
+  const shouldAutoPlayRef = useRef(false)
 
   // ── 1. Fetch audiobook catalog từ backend ──────────────────────────────────
   useEffect(() => {
@@ -70,41 +99,32 @@ function AudiobookPlayer({ bookId }) {
     setIsFetching(true)
     setFetchError(null)
     setCatalog(null)
-    setAudioUnavailable(false)
+    setAudioUnavailable(null)
 
     fetch(`/api/books/${bookId}/audio`, { credentials: 'include' })
       .then((res) => {
-        if (res.status === 401 || res.status === 403 || res.status === 404) {
-          // Dev Mode Bypass: Fallback to mock data so UI can be tested easily
-          console.warn(`[AudiobookPlayer] API returned ${res.status}. Fallback to mock catalog for testing.`);
-          return {
-            bookId: Number(bookId),
-            parts: [
-              {
-                id: 9999,
-                partNumber: 1,
-                title: 'Phần 1 - Bắt đầu (Bypass Dev Mode)',
-                durationMs: 98000,
-                language: 'vi-VN',
-                narrator: 'Trọng Trí (Mock)',
-                // A publicly accessible short mp3 file for actual sound streaming
-                streamUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-                chapters: [
-                  { id: 99991, sequence: 1, title: 'Chương 1: Khởi đầu hành trình', startMs: 0, endMs: 30000 },
-                  { id: 99992, sequence: 2, title: 'Chương 2: Cánh chim lạ xuất hiện', startMs: 30000, endMs: 65000 },
-                  { id: 99993, sequence: 3, title: 'Chương 3: Sự thật được tiết lộ', startMs: 65000, endMs: 98000 }
-                ]
-              }
-            ]
-          }
+        if (res.status === 401) {
+          setAudioUnavailable('Vui lòng đăng nhập để nghe sách nói.')
+          return null
+        }
+        if (res.status === 403) {
+          setAudioUnavailable('Bạn chưa có quyền truy cập sách nói này.')
+          return null
+        }
+        if (res.status === 404) {
+          setAudioUnavailable('Sách nói hiện chưa khả dụng.')
+          return null
         }
         if (!res.ok) throw new Error(`Lỗi máy chủ: ${res.status}`)
         return res.json()
       })
       .then((data) => {
-        if (!data) return
+        if (!data) {
+          setIsFetching(false)
+          return
+        }
         if (!data?.parts?.length) {
-          setAudioUnavailable(true)
+          setAudioUnavailable('Sách nói hiện chưa có dữ liệu phát.')
           setIsFetching(false)
           return
         }
@@ -121,10 +141,15 @@ function AudiobookPlayer({ bookId }) {
   // ── 2. Reset khi đổi part ──────────────────────────────────────────────────
   useEffect(() => {
     if (!audioRef.current) return
-    audioRef.current.currentTime = 0
-    setCurrentTime(0)
+    const pendingChapter = pendingChapterRef.current
+    const nextTime = pendingChapter?.partIndex === activePartIndex
+      ? pendingChapter.startMs / 1000
+      : 0
+
+    audioRef.current.currentTime = nextTime
     setDuration(0)
-    setIsPlaying(false)
+    setCurrentTime(nextTime)
+    setIsPlaying(shouldAutoPlayRef.current)
     setStreamError(null)
     // crossOrigin phải set trước khi load
     audioRef.current.crossOrigin = 'use-credentials'
@@ -172,10 +197,19 @@ function AudiobookPlayer({ bookId }) {
   }
 
   const handleChapterClick = (chapter) => {
+    pendingChapterRef.current = chapter
+    setStreamError(null)
+
+    if (chapter.partIndex !== activePartIndex) {
+      shouldAutoPlayRef.current = true
+      setActivePartIndex(chapter.partIndex)
+      return
+    }
+
     const seekSecs = chapter.startMs / 1000
     handleSeek(seekSecs)
-    setStreamError(null)
-    if (!isPlaying && audioRef.current) {
+    shouldAutoPlayRef.current = true
+    if (audioRef.current) {
       audioRef.current.play()
         .then(() => setIsPlaying(true))
         .catch((err) => {
@@ -183,11 +217,6 @@ function AudiobookPlayer({ bookId }) {
           setStreamError('Không thể phát âm thanh. Vui lòng thử lại sau.')
         })
     }
-  }
-
-  const handlePartChange = (index) => {
-    setActivePartIndex(index)
-    setIsPlaying(false)
   }
 
   // ─── Audio element event handlers ──────────────────────────────────────────
@@ -199,6 +228,23 @@ function AudiobookPlayer({ bookId }) {
     if (audioRef.current) {
       const d = audioRef.current.duration
       setDuration(isFinite(d) ? d : (activePart?.durationMs ?? 0) / 1000)
+
+      const pendingChapter = pendingChapterRef.current
+      if (pendingChapter?.partIndex === activePartIndex) {
+        const seekSecs = pendingChapter.startMs / 1000
+        audioRef.current.currentTime = seekSecs
+        setCurrentTime(seekSecs)
+        pendingChapterRef.current = null
+      }
+
+      if (shouldAutoPlayRef.current) {
+        shouldAutoPlayRef.current = false
+        audioRef.current.play().catch((err) => {
+          console.error('[AudiobookPlayer] autoplay error:', err)
+          setStreamError('Không thể tự động phát phần tiếp theo. Vui lòng nhấn phát để tiếp tục.')
+          setIsPlaying(false)
+        })
+      }
     }
     setIsBuffering(false)
   }
@@ -210,24 +256,63 @@ function AudiobookPlayer({ bookId }) {
     setIsBuffering(false)
     setStreamError('Lỗi tải luồng âm thanh. Kiểm tra kết nối mạng hoặc thử lại.')
   }
+  const onEnded      = () => {
+    if (activePartIndex < playbackQueue.length - 1) {
+      pendingChapterRef.current = null
+      shouldAutoPlayRef.current = true
+      setActivePartIndex((idx) => idx + 1)
+      return
+    }
+    setIsPlaying(false)
+  }
 
   // ─── Derived values ─────────────────────────────────────────────────────────
 
-  const activePart = catalog?.parts[activePartIndex] ?? null
+  const playbackQueue = buildPlaybackQueue(catalog?.parts)
+  const flattenedChapters = flattenChapters(playbackQueue)
+  const indexChapters = flattenedChapters.filter(isIndexChapter)
+  const activePart = playbackQueue[activePartIndex] ?? null
   const currentMs  = currentTime * 1000
   const activeChapter = activePart
-    ? findActiveChapter(activePart.chapters, currentMs, activePart.durationMs)
+    ? findActiveChapter(indexChapters.filter((ch) => ch.partIndex === activePartIndex), currentMs, activePart.durationMs)
     : null
+  const activeChapterKey = activeChapter?.playbackKey ?? null
 
   // ─── Render states ──────────────────────────────────────────────────────────
 
-  if (isFetching) return null   // load nhẹ, không flash spinner
+  if (isFetching) {
+    return (
+      <section className="audiobook-player-section" aria-label="Trình phát sách nói">
+        <div className="player-main-header">
+          <Headphones size={22} />
+          <h2>Trình phát Sách nói DAISY</h2>
+        </div>
+        <div className="player-loading" aria-live="polite">
+          <Loader2 size={18} />
+          <span>Đang tải dữ liệu sách nói...</span>
+        </div>
+      </section>
+    )
+  }
 
-  if (audioUnavailable) return null   // audio chưa được ingest hoặc cần login
+  if (audioUnavailable) {
+    return (
+      <section className="audiobook-player-section" aria-label="Trình phát sách nói">
+        <div className="player-main-header">
+          <Headphones size={22} />
+          <h2>Trình phát Sách nói DAISY</h2>
+        </div>
+        <div className="player-empty" role="status">
+          <Headphones size={18} />
+          <span>{audioUnavailable}</span>
+        </div>
+      </section>
+    )
+  }
 
   if (fetchError) {
     return (
-      <div className="audiobook-player-section">
+      <section className="audiobook-player-section" aria-label="Trình phát sách nói">
         <div className="player-main-header">
           <Headphones size={22} />
           <h2>Trình phát Sách nói DAISY</h2>
@@ -236,7 +321,7 @@ function AudiobookPlayer({ bookId }) {
           <AlertCircle size={16} />
           <span>{fetchError}</span>
         </div>
-      </div>
+      </section>
     )
   }
 
@@ -276,6 +361,7 @@ function AudiobookPlayer({ bookId }) {
         onCanPlay={onCanPlay}
         onLoadStart={onLoadStart}
         onError={onError}
+        onEnded={onEnded}
       />
 
       {/* Controls row: Play/Pause | Volume | Speed */}
@@ -307,28 +393,6 @@ function AudiobookPlayer({ bookId }) {
         formatTime={formatTime}
       />
 
-      {/* Part selector (chỉ hiện nếu có nhiều parts) */}
-      {catalog.parts.length > 1 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)' }}>
-            Chọn phần phát:
-          </span>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            {catalog.parts.map((part, idx) => (
-              <button
-                key={part.id}
-                onClick={() => handlePartChange(idx)}
-                className={`btn ${activePartIndex === idx ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                aria-pressed={activePartIndex === idx}
-              >
-                {part.title || `Phần ${part.partNumber}`}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Chapter list với toggle */}
       <div>
         <button
@@ -342,16 +406,16 @@ function AudiobookPlayer({ bookId }) {
           aria-expanded={showChapters}
           aria-controls="chapters-panel"
         >
-          <span>Danh sách chương ({activePart.chapters.length})</span>
+          <span>Danh sách chương ({indexChapters.length})</span>
           {showChapters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
 
         {showChapters && (
           <div id="chapters-panel">
             <ChapterList
-              chapters={activePart.chapters}
+              chapters={indexChapters}
               partDurationMs={activePart.durationMs}
-              activeChapterId={activeChapter?.id ?? null}
+              activeChapterId={activeChapterKey}
               onChapterClick={handleChapterClick}
               formatTime={formatTime}
             />

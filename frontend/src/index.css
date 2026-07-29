@@ -21,18 +21,16 @@
   --header-height: 80px;
 }
 
-/* Dark Mode Variables (Optional / Future Ready) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: hsl(215, 28%, 10%);
-    --card-bg: hsl(215, 28%, 14%);
-    --text-main: hsl(210, 40%, 98%);
-    --text-muted: hsl(215, 16%, 70%);
-    --border: hsl(215, 28%, 20%);
-    --primary-light: rgba(13, 148, 136, 0.15);
-    --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 30px -4px rgba(0, 0, 0, 0.4);
-  }
+/* Dark Mode Variables */
+body[data-theme='dark'] {
+  --background: hsl(215, 28%, 10%);
+  --card-bg: hsl(215, 28%, 14%);
+  --text-main: hsl(210, 40%, 98%);
+  --text-muted: hsl(215, 16%, 70%);
+  --border: hsl(215, 28%, 20%);
+  --primary-light: rgba(13, 148, 136, 0.15);
+  --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 30px -4px rgba(0, 0, 0, 0.4);
 }
 
 /* Resets */
@@ -134,10 +132,8 @@ a {
   border-bottom: 1px solid var(--border);
 }
 
-@media (prefers-color-scheme: dark) {
-  .site-header {
-    background-color: rgba(30, 41, 59, 0.85);
-  }
+body[data-theme='dark'] .site-header {
+  background-color: rgba(30, 41, 59, 0.85);
 }
 
 .header-container {
@@ -190,6 +186,32 @@ a {
     flex-grow: 1;
     justify-content: flex-end;
   }
+}
+
+.theme-toggle-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Nav Menu */
@@ -1206,4 +1228,31 @@ a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.player-loading,
+.player-empty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 550;
+}
+
+.player-loading {
+  background-color: var(--primary-light);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  color: var(--primary);
+}
+
+.player-loading svg {
+  animation: spin 1s linear infinite;
+}
+
+.player-empty {
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
 }
