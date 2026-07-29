@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { afterEach, describe, it, mock } = require('node:test');
 
 process.env.NODE_ENV = 'test';
+process.env.AUDIO_DEV_BYPASS_AUTH = 'false';
 
 const { createApp } = require('../src/app');
 const { startServer } = require('../src/server');
