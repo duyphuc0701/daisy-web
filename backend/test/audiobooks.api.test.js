@@ -2,6 +2,11 @@ const assert = require("node:assert/strict");
 const { Readable } = require("node:stream");
 const { afterEach, describe, it, mock } = require("node:test");
 const { createApp } = require("../src/app");
+const {
+  DEVELOPMENT_PRINCIPAL,
+  createAudiobookSecurity,
+  parseDevelopmentBypass,
+} = require("../src/config/audiobook-security");
 const { parseSingleRange } = require("../src/utils/byte-range");
 const servers = new Set();
 const bytes = Buffer.from("0123456789");
@@ -121,6 +126,27 @@ describe("audiobook API", () => {
     assert.equal(body.parts[0].chapters[0].startMs, 0);
     assert.equal(JSON.stringify(body).includes("r2_key"), false);
   });
+  it("allows cookie-free playback through the explicit development bypass", async () => {
+    const options = setup();
+    delete options.authenticateRequest;
+    delete options.audioAccessPolicy;
+    options.audiobookSecurity = createAudiobookSecurity({
+      env: {
+        NODE_ENV: "development",
+        AUDIO_DEV_BYPASS_AUTH: "true",
+      },
+    });
+
+    const catalog = await request(options, "/api/books/42/audio");
+    assert.equal(catalog.status, 200);
+
+    const stream = await request(
+      options,
+      "/api/books/42/audio/104/stream",
+    );
+    assert.equal(stream.status, 200);
+    assert.equal(await stream.text(), "0123456789");
+  });
   it("streams a full MP3 with safe private headers", async () => {
     const response = await request(setup(), "/api/books/42/audio/104/stream");
     assert.equal(response.status, 200);
@@ -192,6 +218,43 @@ describe("audiobook API", () => {
     assert.equal(response.status, 429);
     assert.equal(response.headers.get("retry-after"), "60");
     assert.equal(options.storage.head.mock.callCount(), 0);
+  });
+});
+
+describe("audiobook development security", () => {
+  it("fails closed unless the bypass is explicitly enabled", async () => {
+    const security = createAudiobookSecurity({ env: {} });
+
+    assert.equal(await security.authenticateRequest({ headers: {} }), null);
+    assert.equal(
+      await security.audioAccessPolicy.canAccess(
+        DEVELOPMENT_PRINCIPAL,
+        42,
+      ),
+      false,
+    );
+  });
+
+  it("rejects bypass configuration outside development", () => {
+    for (const nodeEnv of [undefined, "test", "production"]) {
+      assert.throws(
+        () =>
+          createAudiobookSecurity({
+            env: {
+              NODE_ENV: nodeEnv,
+              AUDIO_DEV_BYPASS_AUTH: "true",
+            },
+          }),
+        /allowed only when NODE_ENV=development/,
+      );
+    }
+  });
+
+  it("rejects ambiguous bypass values", () => {
+    assert.throws(
+      () => parseDevelopmentBypass("yes"),
+      /must be true or false/,
+    );
   });
 });
 describe("byte range parser", () => {

@@ -3,7 +3,9 @@ const express = require("express");
 
 const defaultDatabase = require("./config/database");
 const { createR2ClientFromEnv } = require("./config/r2");
-const { createSessionAuthenticator } = require("./config/auth");
+const {
+  createAudiobookSecurity,
+} = require("./config/audiobook-security");
 const createAudiobooksController = require("./controllers/audiobooks.controller");
 const createBooksController = require("./controllers/books.controller");
 const createCategoriesController = require("./controllers/categories.controller");
@@ -15,7 +17,6 @@ const createCategoriesRepository = require("./repositories/categories.repository
 const createAudiobooksRouter = require("./routes/audiobooks.routes");
 const createBooksRouter = require("./routes/books.routes");
 const createCategoriesRouter = require("./routes/categories.routes");
-const createAudiobookAccessPolicy = require("./services/audiobook-access-policy");
 const createAudioRateLimiter = require("./services/audio-rate-limiter");
 const createR2AudioStorage = require("./services/r2-audio-storage");
 
@@ -58,8 +59,9 @@ function createApp({
   database = defaultDatabase,
   audioStorage,
   audiobooksRepository,
-  authenticateRequest = createSessionAuthenticator(),
-  audioAccessPolicy = createAudiobookAccessPolicy(),
+  audiobookSecurity = createAudiobookSecurity(),
+  authenticateRequest = audiobookSecurity.authenticateRequest,
+  audioAccessPolicy = audiobookSecurity.audioAccessPolicy,
   audioRateLimiter = createAudioRateLimiter(),
   audioCors = createAudioCors(),
 } = {}) {
