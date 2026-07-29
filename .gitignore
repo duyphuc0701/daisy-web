@@ -1,1 +1,8 @@
+# Private release artifacts
 /database/audiobook-metadata.v1.json
+
+# Backend
+backend/node_modules/
+
+# Runtime files
+backend/tmp/
