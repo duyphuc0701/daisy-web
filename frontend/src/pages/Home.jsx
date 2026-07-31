@@ -45,16 +45,29 @@ function Home() {
     return category || 'Tất cả sách'
   }
 
+  // Build live region announcement
+  const getLiveAnnouncement = () => {
+    if (isLoading) return 'Đang tải dữ liệu sách...'
+    if (error) return `Lỗi: ${error}`
+    if (books.length === 0) return 'Không tìm thấy kết quả nào'
+    return `Tìm thấy ${books.length} sách`
+  }
+
   return (
     <div className="home-page">
       {/* Hero section */}
       <section className="hero-section">
         <h1>Thư viện sách nói DAISY</h1>
         <p>
-          Ứng dụng tra cứu và khám phá các đầu sách nói định dạng DAISY hỗ trợ người khiếm thị 
+          Ứng dụng tra cứu và khám phá các đầu sách nói định dạng DAISY hỗ trợ người khiếm thị
           tiếp cận thông tin và tri thức một cách thuận tiện, dễ dàng nhất.
         </p>
       </section>
+
+      {/* Screen reader live region */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {getLiveAnnouncement()}
+      </div>
 
       {/* Heading of results */}
       <div className="page-heading-section">
@@ -66,12 +79,19 @@ function Home() {
 
       {/* Main Content Area */}
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0', gap: '1rem' }}>
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 0', gap: '1rem' }}
+          aria-busy="true"
+        >
           <div className="spinner" style={{ width: '2.5rem', height: '2.5rem', borderTopColor: 'var(--primary)', borderWidth: '4px' }} />
           <p style={{ color: 'var(--text-muted)', fontWeight: 550 }}>Đang tải dữ liệu sách...</p>
         </div>
       ) : error ? (
-        <div className="no-results" style={{ borderColor: 'hsl(0, 84%, 85%)', backgroundColor: 'hsl(0, 84%, 98%)' }}>
+        <div
+          className="no-results"
+          style={{ borderColor: 'hsl(0, 84%, 85%)', backgroundColor: 'hsl(0, 84%, 98%)' }}
+          role="alert"
+        >
           <AlertCircle size={40} style={{ color: 'hsl(0, 84%, 60%)' }} />
           <h3 style={{ color: 'hsl(0, 84%, 40%)', marginBottom: '0.5rem', fontSize: '1.2rem' }}>Đã xảy ra lỗi</h3>
           <p style={{ color: 'hsl(0, 84%, 50%)' }}>{error}</p>
