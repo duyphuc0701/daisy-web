@@ -28,6 +28,23 @@ export function resolveRoute(pathname) {
   if (normalizedPath === '/about') {
     return { name: 'about' }
   }
+  if (normalizedPath === '/login') {
+    return { name: 'login' }
+  }
+  if (normalizedPath === '/register') {
+    return { name: 'register' }
+  }
+  if (normalizedPath === '/forgot-password') {
+    return { name: 'forgot_password' }
+  }
+
+  const resetMatch = normalizedPath.match(/^\/reset-password\/([^/]+)$/)
+  if (resetMatch) {
+    return {
+      name: 'reset_password',
+      params: { token: decodePathSegment(resetMatch[1]) }
+    }
+  }
 
   const bookMatch = normalizedPath.match(/^\/book\/([^/]+)$/)
   if (bookMatch) {
