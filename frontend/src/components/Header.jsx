@@ -19,13 +19,28 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <div className="header-container">
+      {/* Thêm flexbox vào header-container để dàn đều các phần tử */}
+      <div className="header-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
-        {/* Logo và Menu giữ nguyên như cũ... */}
-        <div className="logo-section">
-          <Link to="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)' }}>
-            DAISY Library
-          </Link>
+        {/* Nhóm Logo và Tên thương hiệu vào chung một khối flex để nằm cạnh nhau */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div className="logomattran">
+            <Link to="/" className="brand-link">
+              <img 
+                src="/images/anhmattran.jpg" 
+                alt="MHS Logo" 
+                className="brand-logo"
+                /* Căn chỉnh kích thước tỉ lệ trực tiếp tại đây */
+                style={{ height: '45px', width: 'auto', objectFit: 'contain' }}
+              />
+            </Link> 
+          </div>
+
+          <div className="logo-section">
+            <Link to="/" style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--primary)', textDecoration: 'none' }}>
+              DAISY Library
+            </Link>
+          </div>
         </div>
 
         <nav>
