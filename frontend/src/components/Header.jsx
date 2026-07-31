@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { ChevronDown, BookOpen } from 'lucide-react'
-import { Link, NavLink, useNavigate } from '../navigation'
+import { Link, NavLink, useNavigate, useSearchParams } from '../navigation'
 import SearchBar from './SearchBar'
 import { useAuth } from '../context/AuthContext'
 
 function Header() {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const [searchParams] = useSearchParams()
+  const currentCategory = searchParams.get('category') || 'Tất cả'
   const [categories, setCategories] = useState([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const dropdownRef = useRef(null)
+  const menuRef = useRef(null)
 
   // Fetch categories list from backend
   useEffect(() => {
@@ -21,6 +26,17 @@ function Header() {
       .catch(err => console.error('Error fetching categories:', err))
   }, [])
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const handleCategorySelect = (categoryName) => {
     setDropdownOpen(false)
     if (categoryName === 'Tất cả') {
@@ -28,61 +44,127 @@ function Header() {
     } else {
       navigate(`/?category=${encodeURIComponent(categoryName)}`)
     }
+    // Return focus to toggle button
+    dropdownRef.current?.querySelector('button')?.focus()
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setDropdownOpen(false)
+      setActiveIndex(-1)
+      dropdownRef.current?.querySelector('button')?.focus()
+    } else if (e.key === 'ArrowDown' && dropdownOpen) {
+      e.preventDefault()
+      setActiveIndex(0)
+      const firstItem = menuRef.current?.querySelector('button')
+      firstItem?.focus()
+      firstItem?.scrollIntoView({ block: 'nearest' })
+    }
+  }
+
+  const handleMenuItemKeyDown = (e, index) => {
+    const items = menuRef.current?.querySelectorAll('button')
+    const totalItems = items.length
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      const nextIndex = (index + 1) % totalItems
+      setActiveIndex(nextIndex)
+      items[nextIndex]?.focus()
+      items[nextIndex]?.scrollIntoView({ block: 'nearest' })
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      const prevIndex = (index - 1 + totalItems) % totalItems
+      setActiveIndex(prevIndex)
+      items[prevIndex]?.focus()
+      items[prevIndex]?.scrollIntoView({ block: 'nearest' })
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      items[index]?.click()
+    } else if (e.key === 'Tab') {
+      setDropdownOpen(false)
+      setActiveIndex(-1)
+    }
+  }
+
+  const handleDropdownToggle = () => {
+    setDropdownOpen(!dropdownOpen)
+    if (!dropdownOpen) {
+      // When opening, set active to first item or current selection
+      const currentIdx = categories.indexOf(currentCategory) + 1 // +1 for "Tất cả" at index 0
+      setActiveIndex(currentIdx > 0 ? currentIdx : 0)
+    } else {
+      setActiveIndex(-1)
+    }
   }
 
   return (
     <header className="site-header">
       <div className="header-container">
-        {/* Logo Section */}
         <Link to="/" className="logo-section" onClick={() => setDropdownOpen(false)}>
           <img src="/images/logo/logo_hsv.png" alt="Logo Hội Sinh Viên" className="brand-logo" />
           <img src="/images/favicon.png" alt="DAISY Favicon" className="favicon-logo" />
         </Link>
 
-        {/* Action Elements: Navigation & Search */}
         <div className="header-actions">
-          {/* Navigation Links */}
           <nav>
             <ul className="nav-menu">
               <li>
-                <NavLink 
-                  to="/" 
+                <NavLink
+                  to="/"
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
                   Trang chủ
                 </NavLink>
               </li>
-              
-              {/* Category Dropdown */}
-              <li 
+
+              <li
                 className={`dropdown-container ${dropdownOpen ? 'open' : ''}`}
-                onMouseEnter={() => setDropdownOpen(true)}
-                onMouseLeave={() => setDropdownOpen(false)}
+                ref={dropdownRef}
               >
-                <button 
-                  className="nav-item dropdown-toggle" 
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                <button
+                  className="nav-item dropdown-toggle"
+                  onClick={handleDropdownToggle}
+                  onKeyDown={handleKeyDown}
                   style={{ background: 'none', border: 'none', font: 'inherit' }}
                   aria-expanded={dropdownOpen}
+                  aria-haspopup="listbox"
+                  aria-controls="category-listbox"
+                  id="category-menu-button"
                 >
                   Thể loại sách <ChevronDown size={14} />
                 </button>
-                <ul className="dropdown-menu">
-                  <li>
-                    <button 
-                      className="dropdown-item" 
+                <ul
+                  className="dropdown-menu"
+                  role="listbox"
+                  aria-labelledby="category-menu-button"
+                  aria-activedescendant={activeIndex >= 0 ? `category-option-${activeIndex}` : undefined}
+                  id="category-listbox"
+                  ref={menuRef}
+                >
+                  <li role="presentation">
+                    <button
+                      id="category-option-0"
+                      className="dropdown-item"
                       onClick={() => handleCategorySelect('Tất cả')}
+                      onKeyDown={(e) => handleMenuItemKeyDown(e, 0)}
                       style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', font: 'inherit' }}
+                      role="option"
+                      aria-selected={currentCategory === 'Tất cả'}
                     >
                       Tất cả
                     </button>
                   </li>
                   {categories.map((cat, idx) => (
-                    <li key={idx}>
-                      <button 
-                        className="dropdown-item" 
+                    <li key={idx} role="presentation">
+                      <button
+                        id={`category-option-${idx + 1}`}
+                        className="dropdown-item"
                         onClick={() => handleCategorySelect(cat)}
+                        onKeyDown={(e) => handleMenuItemKeyDown(e, idx + 1)}
                         style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', font: 'inherit' }}
+                        role="option"
+                        aria-selected={currentCategory === cat}
                       >
                         {cat}
                       </button>
@@ -92,8 +174,8 @@ function Header() {
               </li>
 
               <li>
-                <NavLink 
-                  to="/about" 
+                <NavLink
+                  to="/about"
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
                   Giới thiệu
@@ -102,7 +184,6 @@ function Header() {
             </ul>
           </nav>
 
-          {/* Search Input Bar */}
           <SearchBar />
 
           {/* Auth Actions */}
