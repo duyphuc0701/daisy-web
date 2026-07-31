@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import { ChevronDown, BookOpen } from 'lucide-react'
 import { Link, NavLink, useNavigate, useSearchParams } from '../navigation'
 import SearchBar from './SearchBar'
+import { useAuth } from '../context/AuthContext'
 
 function Header() {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [searchParams] = useSearchParams()
   const currentCategory = searchParams.get('category') || 'Tất cả'
   const [categories, setCategories] = useState([])
@@ -183,6 +185,24 @@ function Header() {
           </nav>
 
           <SearchBar />
+
+          {/* Auth Actions */}
+          <div className="header-auth" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {user ? (
+              <>
+                <span className="btn btn-secondary" style={{ cursor: 'default' }}>
+                  {user.username}
+                </span>
+                <button onClick={logout} className="btn btn-primary">
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <NavLink to="/login" className="btn btn-primary">
+                Đăng nhập
+              </NavLink>
+            )}
+          </div>
         </div>
       </div>
     </header>
