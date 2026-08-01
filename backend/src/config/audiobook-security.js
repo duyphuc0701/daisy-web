@@ -1,4 +1,4 @@
-const { createSessionAuthenticator } = require("./auth");
+const { createJwtAuthenticator } = require("./auth");
 const createAudiobookAccessPolicy = require("../services/audiobook-access-policy");
 
 const DEVELOPMENT_PRINCIPAL = Object.freeze({
@@ -39,8 +39,8 @@ function createAudiobookSecurity({ env = process.env } = {}) {
   }
 
   return {
-    authenticateRequest: createSessionAuthenticator({
-      secret: env.AUDIO_SESSION_SECRET,
+    authenticateRequest: createJwtAuthenticator({
+      secret: env.JWT_SECRET,
       cookieName: env.AUDIO_SESSION_COOKIE_NAME || "daisy_session",
     }),
     audioAccessPolicy: createAudiobookAccessPolicy(),

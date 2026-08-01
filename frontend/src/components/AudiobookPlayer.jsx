@@ -19,6 +19,7 @@ import PlayerTimeline from './PlayerTimeline'
 import VolumeControl from './VolumeControl'
 import SpeedControl from './SpeedControl'
 import ChapterList from './ChapterList'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -71,6 +72,7 @@ function isIndexChapter(chapter) {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 function AudiobookPlayer({ bookId }) {
+  const { user } = useAuth()
   // ── API state ──
   const [catalog, setCatalog] = useState(null)          // dữ liệu từ /api/books/:id/audio
   const [fetchError, setFetchError] = useState(null)    // lỗi server thực sự (5xx)
@@ -100,6 +102,12 @@ function AudiobookPlayer({ bookId }) {
     setFetchError(null)
     setCatalog(null)
     setAudioUnavailable(null)
+
+    if (!user) {
+      setAudioUnavailable('Vui lòng đăng nhập để nghe sách nói.')
+      setIsFetching(false)
+      return
+    }
 
     fetch(`/api/books/${bookId}/audio`, { credentials: 'include' })
       .then((res) => {
@@ -136,7 +144,7 @@ function AudiobookPlayer({ bookId }) {
         setFetchError(err.message)
         setIsFetching(false)
       })
-  }, [bookId])
+  }, [bookId, user])
 
   // ── 2. Reset khi đổi part ──────────────────────────────────────────────────
   useEffect(() => {

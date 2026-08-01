@@ -8,6 +8,7 @@ A fullstack web application for browsing, searching, and managing the DAISY Audi
 
 - **Frontend**: React (18), Vite, lightweight client-side routing, Lucide Icons, Vanilla CSS
 - **Backend**: Node.js, Express, MySQL2 (`mysql2/promise`), dotenv, CORS
+- **Authentication**: JWT (JSON Web Tokens), bcrypt (Password hashing), Nodemailer (Email services)
 - **Database**: MySQL 8.0+, containerized via Docker
 - **Tooling**: Docker, npm
 
@@ -82,6 +83,16 @@ docker run -d \
    DB_USER=root
    DB_PASSWORD=root
    DB_NAME=daisy_library
+
+   # Authentication
+   JWT_SECRET=your_jwt_secret_here
+
+   # SMTP Configuration (For Forgot Password feature)
+   SMTP_HOST=smtp.ethereal.email
+   SMTP_PORT=587
+   SMTP_USER=your_ethereal_user
+   SMTP_PASS=your_ethereal_pass
+   FRONTEND_URL=http://localhost:5173
    ```
 
 4. Apply pending database migrations:

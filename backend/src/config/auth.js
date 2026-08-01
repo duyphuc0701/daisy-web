@@ -1,38 +1,50 @@
-const crypto = require("crypto");
-function createSessionAuthenticator({
-  secret = process.env.AUDIO_SESSION_SECRET,
+const jwt = require("jsonwebtoken");
+
+function parseCookies(header = "") {
+  return header.split(";").reduce((cookies, piece) => {
+    const index = piece.indexOf("=");
+    if (index <= 0) return cookies;
+
+    const name = piece.slice(0, index).trim();
+    const value = piece.slice(index + 1).trim();
+    try {
+      cookies[name] = decodeURIComponent(value);
+    } catch {
+      // Ignore malformed cookies and fail authentication closed.
+    }
+    return cookies;
+  }, {});
+}
+
+function tokenFromRequest(req, cookieName) {
+  const authorization = req.headers.authorization;
+  if (typeof authorization === "string") {
+    const match = /^Bearer\s+(.+)$/i.exec(authorization.trim());
+    if (match) return match[1];
+  }
+
+  return parseCookies(req.headers.cookie)[cookieName] || null;
+}
+
+function createJwtAuthenticator({
+  secret = process.env.JWT_SECRET,
   cookieName = process.env.AUDIO_SESSION_COOKIE_NAME || "daisy_session",
 } = {}) {
   return async (req) => {
     if (!secret) return null;
-    const token = parseCookies(req.headers.cookie || "")[cookieName];
+
+    const token = tokenFromRequest(req, cookieName);
     if (!token) return null;
-    const [encoded, signature] = token.split(".");
-    if (!encoded || !signature) return null;
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(encoded)
-      .digest("base64url");
-    const supplied = Buffer.from(signature);
-    const trusted = Buffer.from(expected);
-    if (
-      supplied.length !== trusted.length ||
-      !crypto.timingSafeEqual(supplied, trusted)
-    )
-      return null;
+
     try {
-      const payload = JSON.parse(
-        Buffer.from(encoded, "base64url").toString("utf8"),
-      );
-      if (
-        !payload ||
-        typeof payload.sub !== "string" ||
-        !Number.isSafeInteger(payload.exp) ||
-        payload.exp <= Math.floor(Date.now() / 1000)
-      )
-        return null;
+      const payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
+      const subject = payload.id ?? payload.sub;
+      if (subject === undefined || subject === null || subject === "") return null;
+
       return {
-        id: payload.sub,
+        id: String(subject),
+        username:
+          typeof payload.username === "string" ? payload.username : undefined,
         roles: Array.isArray(payload.roles)
           ? payload.roles.filter((role) => typeof role === "string")
           : [],
@@ -42,14 +54,5 @@ function createSessionAuthenticator({
     }
   };
 }
-function parseCookies(header) {
-  return header.split(";").reduce((cookies, piece) => {
-    const index = piece.indexOf("=");
-    if (index > 0)
-      cookies[piece.slice(0, index).trim()] = decodeURIComponent(
-        piece.slice(index + 1).trim(),
-      );
-    return cookies;
-  }, {});
-}
-module.exports = { createSessionAuthenticator };
+
+module.exports = { createJwtAuthenticator, parseCookies, tokenFromRequest };

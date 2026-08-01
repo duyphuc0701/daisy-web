@@ -271,12 +271,15 @@ body[data-theme='dark'] .site-header {
   box-shadow: var(--shadow-lg);
   padding: 0.5rem;
   min-width: 220px;
+  max-height: 300px;
   margin-top: 0.5rem;
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px);
   transition: var(--transition-smooth);
   list-style: none;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
 .dropdown-container:hover .dropdown-menu,
@@ -343,6 +346,43 @@ body[data-theme='dark'] .site-header {
 
 .search-btn:hover {
   background-color: var(--primary-hover);
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.75rem;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: var(--transition-smooth);
+}
+
+.search-clear-btn:hover {
+  background-color: var(--border);
+  color: var(--text-main);
+}
+
+.search-clear-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --- HOME PAGE & HERO SECTION --- */
@@ -1255,4 +1295,160 @@ body[data-theme='dark'] .site-header {
   background-color: var(--background);
   border: 1px solid var(--border);
   color: var(--text-muted);
+}
+
+/* main authentication styles */
+/* --- AUTHENTICATION PAGES --- */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: var(--bg-alt);
+  padding: 2rem;
+}
+
+.auth-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-title {
+  text-align: center;
+  color: var(--primary);
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.auth-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.auth-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.auth-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: white;
+  transition: var(--transition-smooth);
+  font-family: inherit;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+}
+
+.auth-button {
+  width: 100%;
+  padding: 0.875rem;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.auth-button:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.auth-redirect {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+
+.auth-redirect a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.auth-redirect a:hover {
+  text-decoration: underline;
+}
+
+/* --- PROFILE PAGE --- */
+.profile-container {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 2rem;
+  min-height: calc(100vh - 200px);
+}
+
+.profile-card {
+  background: white;
+  padding: 3rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.profile-card h2 {
+  color: var(--primary);
+  margin-bottom: 2rem;
+}
+
+.profile-info {
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.logout-button {
+  padding: 0.75rem 2rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.logout-button:hover {
+  background-color: #dc2626;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  font-size: 1.2rem;
+  color: var(--primary);
+  font-weight: 600;
 }

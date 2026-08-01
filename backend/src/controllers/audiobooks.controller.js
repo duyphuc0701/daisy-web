@@ -31,7 +31,7 @@ function createAudiobooksController({
       "Cache-Control": "private, no-store",
       "Content-Disposition": "inline",
       "X-Content-Type-Options": "nosniff",
-      Vary: "Origin, Cookie",
+      Vary: "Origin, Cookie, Authorization",
     });
     if (object.etag) res.set("ETag", object.etag);
     if (object.lastModified)
@@ -121,13 +121,13 @@ function createAudiobooksController({
     async stream(req, res, next) {
       let lease;
       try {
-        const part = await partFor(req);
         lease = rateLimiter.acquire({ userId: req.auth.id, ip: req.ip });
         if (!lease.allowed)
           throw new ApiError(429, "Too many audio stream requests", {
             headers: { "Retry-After": String(lease.retryAfter) },
           });
         res.once("close", () => lease.release());
+        const part = await partFor(req);
         const metadata = await storage.head(part.r2_key);
         if (conditionalNotModified(req, metadata)) {
           setHeaders(res, metadata);

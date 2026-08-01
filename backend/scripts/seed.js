@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+const bcrypt = require('bcrypt');
 
 // Load environment variables
 dotenv.config();
@@ -70,6 +71,18 @@ async function seed() {
       )
     `);
 
+    console.log('Creating users table if not exists...');
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        reset_token VARCHAR(255),
+        reset_token_expiry DATETIME
+      )
+    `);
+
     // Read books.json
     const booksJsonPath = path.join(__dirname, '../../books.json');
     if (!fs.existsSync(booksJsonPath)) {
@@ -85,6 +98,9 @@ async function seed() {
     await clearTableIfExists(connection, 'audiobook_publications');
     await clearTableIfExists(connection, 'audiobook_parts');
     await clearTableIfExists(connection, 'books');
+
+    console.log('Clearing existing users...');
+    await connection.query('TRUNCATE TABLE users');
 
     // Insert books
     console.log('Inserting books into the database...');
@@ -111,6 +127,21 @@ async function seed() {
     }
 
     console.log(`Success! Seeded ${insertedCount} books successfully.`);
+
+    console.log('Inserting test users into the database...');
+    const saltRounds = 10;
+    const testPassword = 'password123';
+    const hashedPassword = await bcrypt.hash(testPassword, saltRounds);
+
+    const insertUserQuery = `
+      INSERT INTO users (username, email, password)
+      VALUES (?, ?, ?)
+    `;
+
+    await connection.query(insertUserQuery, ['phuc', 'phuc@example.com', hashedPassword]);
+    await connection.query(insertUserQuery, ['testuser', 'testuser@example.com', hashedPassword]);
+
+    console.log('Success! Seeded test users successfully.');
   } catch (error) {
     console.error('Error seeding database:', error);
     process.exitCode = 1;

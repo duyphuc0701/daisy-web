@@ -63,7 +63,7 @@ DB_PASSWORD=
 DB_NAME=daisy_library
 
 # ── Cloudflare R2 (Audio Streaming) ──────────────────────────────────
-# Bỏ trống nếu chưa có R2; các route /audio sẽ trả 401.
+# Bỏ trống nếu chưa có R2; audio đã xác thực sẽ trả lỗi dịch vụ.
 CLOUDFLARE_S3_API=https://<account-id>.r2.cloudflarestorage.com
 CLOUDFLARE_S3_ACCESS_KEY_ID=
 CLOUDFLARE_S3_SECRET_ACCESS_KEY=
@@ -71,9 +71,9 @@ CLOUDFLARE_S3_BUCKET_NAME=
 CLOUDFLARE_S3_FOLDER_NAME=audio-books
 CLOUDFLARE_S3_REGION=auto
 
-# ── Xác thực phiên nghe nhạc ──────────────────────────────────────────
-# Bỏ trống → mọi yêu cầu audio trả 401.
-AUDIO_SESSION_SECRET=
+# ── Xác thực API và phiên nghe nhạc ───────────────────────────────────
+# Bắt buộc để đăng nhập và xác minh cookie HttpOnly dùng bởi <audio>.
+JWT_SECRET=
 AUDIO_SESSION_COOKIE_NAME=daisy_session
 
 # Chỉ dùng để tích hợp player ở local khi Auth chưa hoàn thành.
@@ -91,9 +91,10 @@ AUDIO_STREAM_RATE_LIMIT_MAX=30
 AUDIO_STREAM_RATE_LIMIT_WINDOW_MS=60000
 ```
 
-> **Lưu ý:** Nếu `CLOUDFLARE_S3_*` hoặc `AUDIO_SESSION_SECRET` bị trống, các route
-> catalog sách (`/api/books`, `/api/categories`) vẫn hoạt động bình thường. Chỉ các
-> route audio (`/api/books/:id/audio*`) trả về `401 Unauthorized`.
+> **Lưu ý:** Nếu `JWT_SECRET` bị trống, các route catalog sách (`/api/books`,
+> `/api/categories`) vẫn hoạt động bình thường, nhưng đăng nhập không thể phát hành
+> phiên và mọi route audio (`/api/books/:id/audio*`) trả `401 Unauthorized` trước
+> khi truy cập database audio hoặc R2.
 
 Để UI tích hợp với dữ liệu và luồng R2 thật trước khi Auth hoàn thành:
 
@@ -158,7 +159,11 @@ Server khởi động tại `http://localhost:<PORT>` (mặc định: `http://lo
 |---|---|---|
 | `GET` | `/api/categories` | Danh sách thể loại sách |
 
-### Sách nói ⚠️ Yêu cầu cookie `daisy_session` hợp lệ
+### Sách nói ⚠️ Yêu cầu cookie HttpOnly `daisy_session` hợp lệ
+
+Cookie được phát hành bởi `POST /api/auth/login` hoặc `POST /api/auth/register`
+và bị xóa bởi `POST /api/auth/logout`. Backend xác thực cookie trước khi truy vấn
+metadata sách nói hoặc gọi Cloudflare R2.
 
 | Method | Endpoint | Mô tả |
 |---|---|---|

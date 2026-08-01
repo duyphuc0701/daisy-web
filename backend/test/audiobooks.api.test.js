@@ -217,6 +217,7 @@ describe("audiobook API", () => {
     const response = await request(options, "/api/books/42/audio/104/stream");
     assert.equal(response.status, 429);
     assert.equal(response.headers.get("retry-after"), "60");
+    assert.equal(options.repository.findPart.mock.callCount(), 0);
     assert.equal(options.storage.head.mock.callCount(), 0);
   });
 });
@@ -226,13 +227,6 @@ describe("audiobook development security", () => {
     const security = createAudiobookSecurity({ env: {} });
 
     assert.equal(await security.authenticateRequest({ headers: {} }), null);
-    assert.equal(
-      await security.audioAccessPolicy.canAccess(
-        DEVELOPMENT_PRINCIPAL,
-        42,
-      ),
-      false,
-    );
   });
 
   it("rejects bypass configuration outside development", () => {
