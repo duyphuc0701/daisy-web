@@ -186,7 +186,8 @@ daisy-web/
 │   ├── test/               # Unit tests
 │   └── package.json        # Frontend Dependencies & Scripts
 ├── database/
-│   └── schema.sql          # MySQL Schema Definition Table & Database Initialization
+│   ├── schema.sql          # Minimal database bootstrap used by local MySQL
+│   └── migrations/         # Ordered application schema and catalog changes
 ├── books.json              # Initial Book Data for Database Seeding
 └── README.md               # Project Documentation
 ```

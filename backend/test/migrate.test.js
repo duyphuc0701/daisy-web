@@ -127,4 +127,32 @@ describe("migration runner", () => {
     assert.match(sql, /ON DUPLICATE KEY UPDATE/i);
     assert.match(sql, /BINARY title = BINARY VALUES\(title\)/i);
   });
+
+  it("owns the users table in a migration instead of bootstrap or seed files", async () => {
+    const [bootstrap, seed, migration] = await Promise.all([
+      fs.readFile(
+        path.join(__dirname, "../../database/schema.sql"),
+        "utf8",
+      ),
+      fs.readFile(path.join(__dirname, "../scripts/seed.js"), "utf8"),
+      fs.readFile(
+        path.join(
+          __dirname,
+          "../../database/migrations/20260801_add_users.sql",
+        ),
+        "utf8",
+      ),
+    ]);
+
+    assert.doesNotMatch(bootstrap, /CREATE TABLE IF NOT EXISTS users/i);
+    assert.doesNotMatch(seed, /CREATE TABLE IF NOT EXISTS users/i);
+    assert.match(migration, /CREATE TABLE IF NOT EXISTS users/i);
+    assert.match(migration, /username VARCHAR\(255\) NOT NULL UNIQUE/i);
+    assert.match(migration, /email VARCHAR\(255\) NOT NULL UNIQUE/i);
+    assert.match(migration, /reset_token_expiry DATETIME NULL/i);
+    assert.match(
+      migration,
+      /created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP/i,
+    );
+  });
 });
