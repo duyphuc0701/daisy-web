@@ -3,6 +3,11 @@
 // Retrieved 2026-07-28, License - CC BY-SA 4.0
 
 async function loadApp() {
-    await import('./index.js');
+  const backendModule = await import('./index.js');
+  const startServer =
+    backendModule.startServer ?? backendModule.default?.startServer;
+
+  startServer();
 }
+
 loadApp();

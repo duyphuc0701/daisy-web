@@ -27,7 +27,7 @@ function ResetPassword({ token }) {
         body: JSON.stringify({ token, newPassword: password })
       });
       const data = await res.json();
-      
+
       if (res.ok) {
         setMessage('Mật khẩu đã được đặt lại thành công.');
         setTimeout(() => {
@@ -36,7 +36,7 @@ function ResetPassword({ token }) {
       } else {
         setError(data.error || 'Có lỗi xảy ra');
       }
-    } catch (err) {
+    } catch (_error) {
       setError('Lỗi kết nối máy chủ');
     } finally {
       setLoading(false);
@@ -49,24 +49,24 @@ function ResetPassword({ token }) {
         <h2 className="auth-title">Đặt lại mật khẩu</h2>
         {error && <div className="auth-error">{error}</div>}
         {message && <div style={{backgroundColor: '#dcfce7', color: '#166534', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.5rem', textAlign: 'center'}}>{message}</div>}
-        
+
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Mật khẩu mới</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Xác nhận mật khẩu mới</label>
-            <input 
-              type="password" 
-              value={confirmPassword} 
-              onChange={(e) => setConfirmPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
             />
           </div>
           <button type="submit" className="auth-button" disabled={loading || !!message}>

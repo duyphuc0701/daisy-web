@@ -26,7 +26,7 @@ function Register() {
     if (result.success) {
       setMessage('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => {
-        navigate('/login');
+        navigate('/');
       }, 2000);
     } else {
       setError(result.error || 'Đăng ký thất bại');
@@ -42,38 +42,38 @@ function Register() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Tên đăng nhập</label>
-            <input 
-              type="text" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Mật khẩu</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Xác nhận mật khẩu</label>
-            <input 
-              type="password" 
-              value={confirmPassword} 
-              onChange={(e) => setConfirmPassword(e.target.value)} 
-              required 
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
             />
           </div>
           <button type="submit" className="auth-button" disabled={loading}>

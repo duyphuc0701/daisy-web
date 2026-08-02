@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const AuthContext = createContext();
 
@@ -8,50 +8,36 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-      fetchProfile(token);
-    } else {
-      localStorage.removeItem('token');
-      setUser(null);
-      setLoading(false);
-    }
-  }, [token]);
+    // The frontend no longer persists bearer tokens. The HttpOnly cookie lets
+    // native media requests authenticate without JavaScript-managed headers.
+    localStorage.removeItem('token');
 
-  const fetchProfile = async (currentToken) => {
-    try {
-      const res = await fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${currentToken}`
-        }
-      });
-      if (res.ok) {
+    fetch('/api/auth/profile', { credentials: 'include' })
+      .then(async (res) => {
+        if (!res.ok) return null;
         const data = await res.json();
-        setUser(data.user);
-      } else {
-        setToken(null);
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile', error);
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+        return data.user;
+      })
+      .then(setUser)
+      .catch((error) => {
+        console.error('Failed to fetch profile', error);
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const login = async (username, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
     const data = await res.json();
     if (res.ok) {
-      setToken(data.token);
       setUser(data.user);
       return { success: true };
     }
@@ -61,24 +47,31 @@ export function AuthProvider({ children }) {
   const register = async (username, email, password) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password })
     });
     const data = await res.json();
     if (res.ok) {
+      setUser(data.user);
       return { success: true };
     }
     return { success: false, error: data.error };
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } finally {
+      setUser(null);
+    }
   };
 
   const value = {
     user,
-    token,
     loading,
     login,
     register,

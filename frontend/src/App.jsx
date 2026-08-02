@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import { NavigationProvider, usePathname } from './navigation'
@@ -15,6 +15,12 @@ import { AuthProvider } from './context/AuthContext'
 function AppContent() {
   const pathname = usePathname()
   const route = resolveRoute(pathname)
+  const [theme, setTheme] = useState(() => localStorage.getItem('daisy-theme') || 'light')
+
+  useEffect(() => {
+    document.body.dataset.theme = theme
+    localStorage.setItem('daisy-theme', theme)
+  }, [theme])
 
   let page = <Home />
   if (route.name === 'about') {
@@ -43,7 +49,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Header />
+      <Header theme={theme} onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))} />
       <main>{page}</main>
       <Footer />
     </div>

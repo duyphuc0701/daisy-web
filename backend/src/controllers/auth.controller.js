@@ -3,9 +3,31 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const emailService = require('../services/email.service');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_me_in_prod';
+function createAuthController(authRepository, { env = process.env } = {}) {
+  const cookieName = env.AUDIO_SESSION_COOKIE_NAME || 'daisy_session';
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 24 * 60 * 60 * 1000,
+  };
 
-function createAuthController(authRepository) {
+  function issueToken(user) {
+    if (!env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is required to issue authentication tokens');
+    }
+
+    return jwt.sign(
+      { id: user.id, username: user.username },
+      env.JWT_SECRET,
+      { algorithm: 'HS256', expiresIn: '1d' }
+    );
+  }
+
+  function establishSession(res, token) {
+    res.cookie(cookieName, token, cookieOptions);
+  }
   async function register(req, res, next) {
     try {
       const { username, email, password } = req.body;
@@ -32,9 +54,8 @@ function createAuthController(authRepository) {
       const user = await authRepository.createUser(username, email, passwordHash);
 
       // Generate token
-      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-        expiresIn: '1d',
-      });
+      const token = issueToken(user);
+      establishSession(res, token);
 
       res.status(201).json({ user, token });
     } catch (error) {
@@ -62,9 +83,8 @@ function createAuthController(authRepository) {
       }
 
       // Generate token
-      const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
-        expiresIn: '1d',
-      });
+      const token = issueToken(user);
+      establishSession(res, token);
 
       res.json({ user: { id: user.id, username: user.username, email: user.email }, token });
     } catch (error) {
@@ -79,6 +99,16 @@ function createAuthController(authRepository) {
     } catch (error) {
       next(error);
     }
+  }
+
+  function logout(_req, res) {
+    res.clearCookie(cookieName, {
+      httpOnly: cookieOptions.httpOnly,
+      sameSite: cookieOptions.sameSite,
+      secure: cookieOptions.secure,
+      path: cookieOptions.path,
+    });
+    res.status(204).end();
   }
 
   async function forgotPassword(req, res, next) {
@@ -96,8 +126,8 @@ function createAuthController(authRepository) {
 
       const resetToken = crypto.randomBytes(32).toString('hex');
       // 1 hour expiry
-      const expiry = new Date(Date.now() + 3600000).toISOString().slice(0, 19).replace('T', ' '); 
-      
+      const expiry = new Date(Date.now() + 3600000).toISOString().slice(0, 19).replace('T', ' ');
+
       await authRepository.saveResetToken(user.id, resetToken, expiry);
 
       const clientUrl = process.env.FRONTEND_URL || req.headers.origin || 'http://localhost:5173';
@@ -138,6 +168,7 @@ function createAuthController(authRepository) {
   return {
     register,
     login,
+    logout,
     getProfile,
     forgotPassword,
     resetPassword

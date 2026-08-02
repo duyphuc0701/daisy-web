@@ -1,23 +1,20 @@
-const jwt = require('jsonwebtoken');
+const { createJwtAuthenticator } = require("../config/auth");
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_me_in_prod';
+function createAuthMiddleware(authenticateRequest = createJwtAuthenticator()) {
+  return async (req, res, next) => {
+    try {
+      const user = await authenticateRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: "Không tìm thấy token xác thực" });
+      }
 
-function authMiddleware(req, res, next) {
-  const authHeader = req.header('Authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Không tìm thấy token xác thực' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // Attach user info to request
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });
-  }
+      req.user = user;
+      next();
+    } catch {
+      res.status(401).json({ error: "Token không hợp lệ hoặc đã hết hạn" });
+    }
+  };
 }
 
-module.exports = authMiddleware;
+module.exports = createAuthMiddleware();
+module.exports.createAuthMiddleware = createAuthMiddleware;

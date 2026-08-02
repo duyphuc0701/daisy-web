@@ -14,8 +14,19 @@ function startServer({
     );
   });
 
+  server.on('error', (error) => {
+    if (error && error.code === 'EADDRINUSE') {
+      console.error(
+        `Port ${port} is already in use. Stop the process using that port or set PORT to another value before running the server.`
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    throw error;
+  });
+
   return server;
 }
 
 module.exports = { startServer };
-

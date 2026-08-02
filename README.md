@@ -1,6 +1,6 @@
 # DAISY Audio Library (Fullstack Web Application)
 
-A fullstack web application for browsing, searching, and managing the DAISY Audio Library. 
+A fullstack web application for browsing, searching, and managing the DAISY Audio Library.
 
 ---
 
@@ -17,6 +17,7 @@ A fullstack web application for browsing, searching, and managing the DAISY Audi
 ## 📋 Prerequisites
 
 Before getting started, make sure you have the following installed on your system:
+
 - **Node.js**: `v20.19+` or `v22.12+`
 - **npm**: `v9.x` or higher
 - **Docker & Docker Desktop**: Installed and running
@@ -32,6 +33,7 @@ Follow these steps in order to set up and run the full application locally.
 Open your terminal in the **root directory of the project** (`daisy-web`) and run:
 
 #### PowerShell (Windows)
+
 ```powershell
 docker run -d `
   --name daisy-mysql `
@@ -43,6 +45,7 @@ docker run -d `
 ```
 
 #### Bash / Linux / macOS
+
 ```bash
 docker run -d \
   --name daisy-mysql \
@@ -60,27 +63,30 @@ docker run -d \
 ### 2. Backend Setup
 
 1. Open a terminal and navigate to the `backend` directory:
+
    ```bash
    cd backend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Configure environment variables in `backend/.env`:
-   *(If `.env` does not exist, copy `.env.example` to `.env`)*
+   _(If `.env` does not exist, copy `.env.example` to `.env`)_
+
    ```env
    PORT=5000
    DB_HOST=localhost
    DB_USER=root
    DB_PASSWORD=root
    DB_NAME=daisy_library
-   
+
    # Authentication
    JWT_SECRET=your_jwt_secret_here
-   
+
    # SMTP Configuration (For Forgot Password feature)
    SMTP_HOST=smtp.ethereal.email
    SMTP_PORT=587
@@ -89,17 +95,42 @@ docker run -d \
    FRONTEND_URL=http://localhost:5173
    ```
 
-4. Seed the database with sample book data (`books.json`):
+4. Apply pending database migrations:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+   Check migration status without applying changes:
+
+   ```bash
+   npm run db:migrate:status
+   ```
+
+   The runner records applied migration checksums in `schema_migrations`; do not edit a migration after applying it.
+
+   Ingest the committed audiobook metadata artifact using read-only R2 credentials:
+
+   ```bash
+   npm run db:migrate
+   npm run db:audiobooks:publish
+   ```
+
+5. Seed the database with sample book data (`books.json`):
+
    ```bash
    npm run db:seed
    ```
-   *Expected output:* `Success! Seeded X books successfully.`
 
-5. Start the backend server:
+   _Expected output:_ `Success! Seeded X books successfully.`
+
+6. Start the backend server:
+
    ```bash
    npm run dev
    ```
-   *(Or run `npm start` for production mode)*
+
+   _(Or run `npm start` for production mode)_
 
    The backend API will be available at **`http://localhost:5000`**.
 
@@ -108,16 +139,19 @@ docker run -d \
 ### 3. Frontend Setup
 
 1. Open a **new terminal tab/window** and navigate to the `frontend` directory:
+
    ```bash
    cd frontend
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the Vite development server:
+
    ```bash
    npm run dev
    ```
@@ -141,9 +175,9 @@ daisy-web/
 │   │   ├── app.js          # Injectable Express application
 │   │   └── server.js       # HTTP server startup
 │   ├── test/               # API regression/unit tests
+│   ├── scripts/            # Migration, seed, and metadata publication CLIs
 │   ├── index.js            # Backend entry point
 │   ├── db.js               # Compatibility database export
-│   ├── seed.js             # Database Seeding Script
 │   ├── .env                # Local Environment Configuration
 │   └── package.json        # Backend Dependencies & Scripts
 ├── frontend/               # React + Vite Frontend Application
@@ -152,7 +186,8 @@ daisy-web/
 │   ├── test/               # Unit tests
 │   └── package.json        # Frontend Dependencies & Scripts
 ├── database/
-│   └── schema.sql          # MySQL Schema Definition Table & Database Initialization
+│   ├── schema.sql          # Minimal database bootstrap used by local MySQL
+│   └── migrations/         # Ordered application schema and catalog changes
 ├── books.json              # Initial Book Data for Database Seeding
 └── README.md               # Project Documentation
 ```
@@ -162,26 +197,57 @@ daisy-web/
 ## 🛠 Available Scripts
 
 ### Backend (`/backend`)
+
 - `npm run dev` – Starts the development API server with `nodemon` (auto-reload on code changes).
 - `npm start` – Starts the backend API server with standard `node`.
 - `npm run db:seed` – Re-initializes the database tables and populates data from `books.json`.
+- `npm run db:migrate` – Applies pending schema and reviewed catalog migrations.
+- `npm run db:audiobooks:publish` – Verifies R2 metadata and publishes the committed artifact.
 - `npm test` – Runs dependency-free API regression tests with Node's built-in test runner.
 
 ### Frontend (`/frontend`)
+
 - `npm run dev` – Starts the Vite dev server (`http://localhost:5173`).
 - `npm run build` – Builds production-ready static assets to `dist/`.
 - `npm run preview` – Locally previews the production build.
 
 ---
 
+## 📚 Audiobook metadata release
+
+`database/audiobook-metadata.v1.json` is the only reviewed audiobook release
+input in this repository. Deployments validate its digest and expected read-only
+R2 metadata, then publish parts and chapters transactionally after migrations.
+Application restart does not ingest the artifact automatically.
+
+## 🔊 Authenticated Cloudflare R2 audiobook streaming
+
+The backend exposes authenticated audiobook metadata and playback under:
+
+- `GET /api/books/:bookId/audio`
+- `GET, HEAD /api/books/:bookId/audio/:audioId/stream`
+- `GET /api/books/:bookId/audio/:audioId/transcript?format=json|text`
+
+The R2 bucket is private. Clients receive API URLs only—never bucket/object keys or presigned URLs. The streaming endpoint supports one byte range and returns `206`, `304`, `416`, or `429` as applicable. Audio requires a verified HTTP-only session cookie; configure an exact allowed UI origin and use credentialed cross-origin media requests. See `backend/docs/audiobook-ingestion.md` for the session adapter, production limiter, content-accessibility, and metadata publication contract.
+
+Until Auth is integrated, backend/UI development can use the fail-safe local
+bypass documented in
+[`backend/docs/audiobook-ui-handoff.md`](./backend/docs/audiobook-ui-handoff.md).
+The bypass requires `NODE_ENV=development`, is rejected in other environments,
+and keeps playback on the real metadata and private R2 streaming path.
+
+---
+
 ## ❓ Troubleshooting & FAQs
 
 ### `ECONNREFUSED` / Database Connection Failed
+
 - Verify Docker is running: `docker ps`
 - Check container logs: `docker logs daisy-mysql`
 - Ensure `DB_PASSWORD` in `backend/.env` matches `MYSQL_ROOT_PASSWORD` used in Docker (default: `root`).
 
 ### Managing the MySQL Container
+
 - **Stop container:** `docker stop daisy-mysql`
 - **Start container:** `docker start daisy-mysql`
 - **Reset/Delete container:** `docker rm -f daisy-mysql`

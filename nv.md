@@ -121,14 +121,14 @@ Tab → Di chuyển ra ngoài dropdown
 
 ```html
 <div class="dropdown-container">
-  <button 
+  <button
     aria-haspopup="listbox"
     aria-expanded="false"
     aria-controls="category-listbox"
   >
     Thể loại sách ▾
   </button>
-  <ul 
+  <ul
     id="category-listbox"
     role="listbox"
     aria-label="Chọn thể loại"

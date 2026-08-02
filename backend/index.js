@@ -1,6 +1,7 @@
 const { startServer } = require('./src/server');
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = { startServer };
-

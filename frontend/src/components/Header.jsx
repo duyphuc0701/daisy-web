@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronDown, BookOpen } from 'lucide-react'
+import { ChevronDown, MoonStar, SunMedium } from 'lucide-react'
 import { Link, NavLink, useNavigate, useSearchParams } from '../navigation'
 import SearchBar from './SearchBar'
 import { useAuth } from '../context/AuthContext'
 
-function Header() {
+function Header({ theme, onToggleTheme }) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [searchParams] = useSearchParams()
@@ -185,6 +185,16 @@ function Header() {
           </nav>
 
           <SearchBar />
+
+          <button
+            type="button"
+            className="theme-toggle-btn"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Chuyển sang light mode' : 'Chuyển sang dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark' ? <SunMedium size={18} /> : <MoonStar size={18} />}
+          </button>
 
           {/* Auth Actions */}
           <div className="header-auth" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

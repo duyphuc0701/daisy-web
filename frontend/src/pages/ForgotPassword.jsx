@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from '../navigation';
+import { Link } from '../navigation';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -20,13 +20,13 @@ function ForgotPassword() {
         body: JSON.stringify({ email })
       });
       const data = await res.json();
-      
+
       if (res.ok) {
         setMessage(data.message || 'Email khôi phục mật khẩu đã được gửi.');
       } else {
         setError(data.error || 'Có lỗi xảy ra');
       }
-    } catch (err) {
+    } catch (_error) {
       setError('Lỗi kết nối máy chủ');
     } finally {
       setLoading(false);
@@ -39,7 +39,7 @@ function ForgotPassword() {
         <h2 className="auth-title">Quên mật khẩu</h2>
         {error && <div className="auth-error">{error}</div>}
         {message && <div style={{backgroundColor: '#dcfce7', color: '#166534', padding: '0.75rem', borderRadius: '4px', marginBottom: '1.5rem', textAlign: 'center'}}>{message}</div>}
-        
+
         <p style={{marginBottom: '1.5rem', color: 'var(--text-main)', textAlign: 'center'}}>
           Nhập địa chỉ email của bạn, chúng tôi sẽ gửi một liên kết để đặt lại mật khẩu.
         </p>
@@ -47,11 +47,11 @@ function ForgotPassword() {
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
           <button type="submit" className="auth-button" disabled={loading}>
