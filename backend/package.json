@@ -4,8 +4,8 @@
   "description": "Backend API for DAISY Audio Library",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node --max-old-space-size=256 index.js",
+    "dev": "nodemon --max-old-space-size=256 index.js",
     "db:seed": "node scripts/seed.js",
     "test": "node --test",
     "db:migrate": "node scripts/migrate.js up",

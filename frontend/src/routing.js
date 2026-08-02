@@ -37,6 +37,9 @@ export function resolveRoute(pathname) {
   if (normalizedPath === '/forgot-password') {
     return { name: 'forgot_password' }
   }
+  if (normalizedPath === '/activity') {
+    return { name: 'activity' }
+  }
 
   const resetMatch = normalizedPath.match(/^\/reset-password\/([^/]+)$/)
   if (resetMatch) {

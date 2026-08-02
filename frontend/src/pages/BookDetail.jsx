@@ -1,16 +1,33 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import QRCode from 'qrcode'
-import { ArrowLeft, Download, AlertCircle, Calendar, User, BookOpen, Library } from 'lucide-react'
-import { Link } from '../navigation'
+import { ArrowLeft, Download, AlertCircle, Calendar, User, BookOpen, Library, Bookmark, BookmarkCheck, Heart, Loader2 } from 'lucide-react'
+import { Link, useNavigate } from '../navigation'
 import AudiobookPlayer from '../components/AudiobookPlayer'
+import { useAuth } from '../context/AuthContext'
 
 function BookDetail({ id }) {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
   const [book, setBook] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [qrCodeUrl, setQrCodeUrl] = useState('')
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState(false)
+
+  // ── Library Save State ──────────────────────────────────────────────────────
+  const [isSaved, setIsSaved] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [saveStatusFetched, setSaveStatusFetched] = useState(false)
+
+  // ── Favorite State ─────────────────────────────────────────────────────────
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favoriteLoading, setFavoriteLoading] = useState(false)
+  const [favoriteStatusFetched, setFavoriteStatusFetched] = useState(false)
+
+  // ── Screen-Reader Live Announcement State ─────────────────────────────────
+  const [announcement, setAnnouncement] = useState('')
 
   // Fetch book metadata (title, author, cover, …)
   useEffect(() => {
@@ -35,6 +52,44 @@ function BookDetail({ id }) {
       })
   }, [id])
 
+  // Fetch library status once the book is known and user is logged in
+  useEffect(() => {
+    if (!user || !book) return
+
+    setSaveStatusFetched(false)
+    fetch(`/api/activity/library/${id}/status`, { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error('status fetch failed')
+        return res.json()
+      })
+      .then(data => {
+        setIsSaved(Boolean(data.saved))
+        setSaveStatusFetched(true)
+      })
+      .catch(() => {
+        setSaveStatusFetched(true)
+      })
+  }, [user, book, id])
+
+  // Fetch favorite status once the book is known and user is logged in
+  useEffect(() => {
+    if (!user || !book) return
+
+    setFavoriteStatusFetched(false)
+    fetch(`/api/activity/favorite/${id}/status`, { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error('favorite status fetch failed')
+        return res.json()
+      })
+      .then(data => {
+        setIsFavorited(Boolean(data.favorited))
+        setFavoriteStatusFetched(true)
+      })
+      .catch(() => {
+        setFavoriteStatusFetched(true)
+      })
+  }, [user, book, id])
+
   // Generate QR code for viewing the book
   useEffect(() => {
     if (book && book.viewUrl) {
@@ -42,21 +97,99 @@ function BookDetail({ id }) {
         width: 128,
         margin: 2,
         color: {
-          dark: '#2f1d1d', // Match original color
-          light: '#f3eeee' // Match original color
+          dark: '#2f1d1d',
+          light: '#f3eeee'
         },
         errorCorrectionLevel: 'H'
       })
-      .then(url => {
-        setQrCodeUrl(url)
-      })
-      .catch(err => {
-        console.error('Failed to generate QR Code', err)
-      })
+      .then(url => setQrCodeUrl(url))
+      .catch(err => console.error('Failed to generate QR Code', err))
     }
   }, [book])
 
-  // Handle Download trigger with spinner simulation
+  // ── Library toggle handler ─────────────────────────────────────────────────
+  const handleToggleSave = useCallback(async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setSaveLoading(true)
+    const wasSaved = isSaved
+    // Optimistic update
+    setIsSaved(!wasSaved)
+
+    try {
+      const res = await fetch(`/api/activity/library/${id}`, {
+        method: wasSaved ? 'DELETE' : 'POST',
+        credentials: 'include',
+      })
+
+      if (res.status === 401) {
+        setIsSaved(wasSaved)
+        navigate('/login')
+        return
+      }
+
+      if (!res.ok) throw new Error('Request failed')
+
+      setAnnouncement(
+        wasSaved
+          ? `Đã xóa "${book.title}" khỏi thư viện cá nhân`
+          : `Đã thêm "${book.title}" vào thư viện cá nhân`
+      )
+    } catch {
+      // Roll back optimistic update on error
+      setIsSaved(wasSaved)
+      setAnnouncement('Không thể cập nhật thư viện. Vui lòng thử lại.')
+    } finally {
+      setSaveLoading(false)
+      setTimeout(() => setAnnouncement(''), 5000)
+    }
+  }, [user, isSaved, id, book, navigate])
+
+  // ── Favorite toggle handler ────────────────────────────────────────────────
+  const handleToggleFavorite = useCallback(async () => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+
+    setFavoriteLoading(true)
+    const wasFavorited = isFavorited
+    // Optimistic update
+    setIsFavorited(!wasFavorited)
+
+    try {
+      const res = await fetch(`/api/activity/favorite/${id}`, {
+        method: wasFavorited ? 'DELETE' : 'POST',
+        credentials: 'include',
+      })
+
+      if (res.status === 401) {
+        setIsFavorited(wasFavorited)
+        navigate('/login')
+        return
+      }
+
+      if (!res.ok) throw new Error('Request failed')
+
+      setAnnouncement(
+        wasFavorited
+          ? `Đã xóa "${book.title}" khỏi danh sách yêu thích`
+          : `Đã thêm "${book.title}" vào danh sách yêu thích`
+      )
+    } catch {
+      // Roll back optimistic update on error
+      setIsFavorited(wasFavorited)
+      setAnnouncement('Không thể cập nhật danh sách yêu thích. Vui lòng thử lại.')
+    } finally {
+      setFavoriteLoading(false)
+      setTimeout(() => setAnnouncement(''), 5000)
+    }
+  }, [user, isFavorited, id, book, navigate])
+
+  // ── Download handler ───────────────────────────────────────────────────────
   const handleDownload = async () => {
     if (!book || !book.downloadUrl) {
       setDownloadError(true)
@@ -66,7 +199,6 @@ function BookDetail({ id }) {
     setDownloadError(false)
     setIsDownloading(true)
 
-    // Simulate network delay before starting download (matches original behavior)
     await new Promise(resolve => setTimeout(resolve, 1000))
 
     try {
@@ -85,6 +217,7 @@ function BookDetail({ id }) {
     }
   }
 
+  // ── Render guards ──────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6rem 0', gap: '1rem' }}>
@@ -116,17 +249,98 @@ function BookDetail({ id }) {
   const categoryName = book.category || 'Khác'
   const bookDesc = book.description || 'Không có mô tả chi tiết cho quyển sách này.'
 
+  // Dynamic aria-labels
+  const saveAriaLabel = isSaved
+    ? `Xóa "${book.title}" khỏi thư viện cá nhân`
+    : user
+      ? `Thêm "${book.title}" vào thư viện cá nhân`
+      : `Đăng nhập để thêm "${book.title}" vào thư viện cá nhân`
+
+  const favoriteAriaLabel = isFavorited
+    ? `Bỏ yêu thích "${book.title}"`
+    : user
+      ? `Thêm "${book.title}" vào danh sách yêu thích`
+      : `Đăng nhập để thêm "${book.title}" vào danh sách yêu thích`
+
   return (
     <div className="book-detail-page">
+      {/* ── Global screen-reader live region ── */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
+
       <Link to="/" className="back-link">
         <ArrowLeft size={16} /> Quay lại trang chủ
       </Link>
 
       <div className="detail-layout">
-        {/* Left Side: Book Image Cover */}
+        {/* Left Side: Book Image Cover & Primary Quick Actions */}
         <div className="detail-image-section">
           <div className="detail-image-wrapper">
             <img src={coverImage} alt={`Bìa sách ${book.title}`} />
+          </div>
+
+          {/* ── Library & Favorite Action Buttons Group ── */}
+          <div className="book-detail-actions-group">
+            {/* Save to Library button */}
+            <button
+              id={`save-book-${id}`}
+              className={`btn btn-save-library${isSaved ? ' saved' : ''}`}
+              onClick={handleToggleSave}
+              disabled={saveLoading || (user && !saveStatusFetched)}
+              aria-pressed={user ? isSaved : undefined}
+              aria-label={saveAriaLabel}
+              aria-busy={saveLoading}
+            >
+              {saveLoading ? (
+                <>
+                  <Loader2 size={16} aria-hidden="true" className="save-btn-spinner" />
+                  <span>{isSaved ? 'Đang xóa...' : 'Đang lưu...'}</span>
+                </>
+              ) : isSaved ? (
+                <>
+                  <BookmarkCheck size={16} aria-hidden="true" />
+                  <span>Đã lưu vào thư viện</span>
+                </>
+              ) : (
+                <>
+                  <Bookmark size={16} aria-hidden="true" />
+                  <span>{user ? '+ Thêm vào thư viện' : 'Đăng nhập để lưu'}</span>
+                </>
+              )}
+            </button>
+
+            {/* Favorite / Like button */}
+            <button
+              id={`favorite-book-${id}`}
+              className={`btn btn-favorite-library${isFavorited ? ' favorited' : ''}`}
+              onClick={handleToggleFavorite}
+              disabled={favoriteLoading || (user && !favoriteStatusFetched)}
+              aria-pressed={user ? isFavorited : undefined}
+              aria-label={favoriteAriaLabel}
+              aria-busy={favoriteLoading}
+            >
+              {favoriteLoading ? (
+                <>
+                  <Loader2 size={16} aria-hidden="true" className="save-btn-spinner" />
+                  <span>Đang xử lý...</span>
+                </>
+              ) : isFavorited ? (
+                <>
+                  <Heart size={16} aria-hidden="true" fill="currentColor" />
+                  <span>Đã yêu thích</span>
+                </>
+              ) : (
+                <>
+                  <Heart size={16} aria-hidden="true" />
+                  <span>Yêu thích</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -225,7 +439,7 @@ function BookDetail({ id }) {
         </div>
       </div>
 
-      {/* Audiobook Player Section – tự fetch /api/books/:id/audio bên trong */}
+      {/* Audiobook Player Section */}
       <AudiobookPlayer bookId={id} />
     </div>
   )

@@ -181,6 +181,18 @@ function Header({ theme, onToggleTheme }) {
                   Giới thiệu
                 </NavLink>
               </li>
+
+              {user && (
+                <li>
+                  <NavLink
+                    to="/activity"
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    aria-label="Trang hoạt động và thư viện cá nhân"
+                  >
+                    Hoạt động
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </nav>
 

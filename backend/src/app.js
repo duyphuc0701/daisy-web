@@ -5,6 +5,7 @@ const defaultDatabase = require("./config/database");
 const { createJwtAuthenticator } = require("./config/auth");
 const { createR2ClientFromEnv } = require("./config/r2");
 const { createAudiobookSecurity } = require("./config/audiobook-security");
+const createActivityController = require("./controllers/activity.controller");
 const createAudiobooksController = require("./controllers/audiobooks.controller");
 const createAuthController = require("./controllers/auth.controller");
 const createBooksController = require("./controllers/books.controller");
@@ -12,10 +13,12 @@ const createCategoriesController = require("./controllers/categories.controller"
 const { createAuthMiddleware } = require("./middleware/auth.middleware");
 const errorHandler = require("./middleware/error-handler");
 const createRequireAuthenticatedUser = require("./middleware/require-authenticated-user");
+const createActivityRepository = require("./repositories/activity.repository");
 const createAudiobooksRepository = require("./repositories/audiobooks.repository");
 const createAuthRepository = require("./repositories/auth.repository");
 const createBooksRepository = require("./repositories/books.repository");
 const createCategoriesRepository = require("./repositories/categories.repository");
+const createActivityRouter = require("./routes/activity.routes");
 const createAudiobooksRouter = require("./routes/audiobooks.routes");
 const createAuthRouter = require("./routes/auth.routes");
 const createBooksRouter = require("./routes/books.routes");
@@ -86,9 +89,11 @@ function createApp({
   const booksRepository = createBooksRepository(database);
   const categoriesRepository = createCategoriesRepository(database);
   const authRepository = createAuthRepository(database);
+  const activityRepository = createActivityRepository(database);
   const booksController = createBooksController(booksRepository);
   const categoriesController = createCategoriesController(categoriesRepository);
   const authController = createAuthController(authRepository, { env: authEnv });
+  const activityController = createActivityController(activityRepository);
 
   const r2 = createR2ClientFromEnv();
   const storage = audioStorage || createR2AudioStorage(r2);
@@ -105,6 +110,7 @@ function createApp({
 
   const isProtectedRoute = (path) =>
     /^\/api\/auth(?:\/|$)/.test(path) ||
+    /^\/api\/activity(?:\/|$)/.test(path) ||
     /^\/api\/books\/[^/]+\/audio(?:\/|$)/.test(path);
 
   // Preserve wildcard CORS for the public catalog while credentials stay scoped.
@@ -124,6 +130,19 @@ function createApp({
     }),
   );
   app.use("/api/categories", createCategoriesRouter(categoriesController));
+  app.use(
+    "/api/activity",
+    createAuthCors(authEnv),
+    createActivityRouter(
+      activityController,
+      createAuthMiddleware(
+        createJwtAuthenticator({
+          secret: authEnv.JWT_SECRET,
+          cookieName: authEnv.AUDIO_SESSION_COOKIE_NAME || "daisy_session",
+        }),
+      ),
+    ),
+  );
   app.use(
     "/api/auth",
     createAuthCors(authEnv),
