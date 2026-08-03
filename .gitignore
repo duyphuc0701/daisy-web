@@ -6,3 +6,5 @@ backend/node_modules/
 
 # Runtime files
 backend/tmp/
+
+.env
