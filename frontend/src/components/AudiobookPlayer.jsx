@@ -27,7 +27,10 @@ import SpeedControl from "./SpeedControl";
 import ChapterList from "./ChapterList";
 import { useAuth } from "../context/AuthContext";
 import { useAudioHotkeys } from "../hooks/useAudioHotkeys";
-
+import { Minimize2 } from "lucide-react";
+import MiniAudioPlayer from "./MiniAudioPlayer";
+import { useAudio } from "../context/AudioContext";
+import { useNavigate } from "../navigation";
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Format seconds → "m:ss" hoặc "h:mm:ss" */
@@ -88,6 +91,12 @@ function AudiobookPlayer({ bookId }) {
   const [fetchError, setFetchError] = useState(null); // lỗi server thực sự (5xx)
   const [audioUnavailable, setAudioUnavailable] = useState(null); // 401/403/404/no-parts
   const [isFetching, setIsFetching] = useState(true);
+
+  // Custom navigation hook for routing
+  const navigate = useNavigate();
+
+  // Consume global audio context for mini player synchronization
+  const { isMini, setIsMini, updateMiniData } = useAudio();
 
   // ── Player state ──
   const [activePartIndex, setActivePartIndex] = useState(0);
@@ -239,6 +248,21 @@ function AudiobookPlayer({ bookId }) {
     }
   };
 
+  /**
+   * Enables mini player mode and redirects the user back to the homepage.
+   */
+  const handleMinimizeAndGoHome = () => {
+    // 1. Activate mini player floating component globally
+    setIsMini(true);
+
+    // 2. Navigate back to home route
+    if (typeof navigate === "function") {
+      navigate("/");
+    } else {
+      window.location.hash = "/";
+    }
+  };
+
   // ─── Audio element event handlers ──────────────────────────────────────────
 
   const onPlay = () => setIsPlaying(true);
@@ -308,6 +332,21 @@ function AudiobookPlayer({ bookId }) {
     : null;
   const activeChapterKey = activeChapter?.playbackKey ?? null;
 
+  useEffect(() => {
+    if (typeof updateMiniData === "function") {
+      updateMiniData({
+        bookId,
+        title: catalog?.title || "Sách nói DAISY",
+        chapterTitle: activeChapter?.title || "Đang phát...",
+        isPlaying,
+        currentTime,
+        duration,
+        streamUrl: activePart?.streamUrl,
+        onTogglePlay: handleTogglePlay,
+      });
+    }
+  }, [catalog, activeChapter, isPlaying, currentTime, duration]);
+
   useAudioHotkeys({
     isPlaying,
     audioRef,
@@ -320,6 +359,7 @@ function AudiobookPlayer({ bookId }) {
     activeChapterKey,
     handleTogglePlay,
     handleChapterClick,
+    onToggleMiniPlayer: () => setIsMini((prev) => !prev),
   });
 
   // ─── Render states ──────────────────────────────────────────────────────────
@@ -388,9 +428,39 @@ function AudiobookPlayer({ bookId }) {
       aria-label="Trình phát sách nói"
     >
       {/* Header */}
-      <div className="player-main-header">
-        <Headphones size={22} />
-        <h2>Trình phát Sách nói DAISY</h2>
+      <div
+        className="player-main-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Headphones size={22} />
+          <h2>Trình phát Sách nói DAISY</h2>
+        </div>
+
+        {/* Minimize button to toggle mini mode and navigate home */}
+        <button
+          onClick={handleMinimizeAndGoHome}
+          className="btn-minimize"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "transparent",
+            border: "1px solid #d1d5db",
+            padding: "5px 10px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "0.85rem",
+            color: "#374151",
+            fontWeight: 500,
+          }}
+        >
+          <Minimize2 size={15} /> Thu nhỏ
+        </button>
       </div>
 
       {/* Stream error banner */}

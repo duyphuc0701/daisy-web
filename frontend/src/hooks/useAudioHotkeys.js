@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-
+import { useAudio } from "../context/AudioContext";
 /**
  * Speech synthesis helper to announce actions for visually impaired users.
  */
@@ -45,7 +45,9 @@ export function useAudioHotkeys({
   activeChapterKey,
   handleTogglePlay,
   handleChapterClick,
+  handleMinimizeAndGoHome,
 }) {
+  const { isMini, handleExpandAndGoBack } = useAudio();
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Prevent hotkeys while typing in inputs or textareas
@@ -163,7 +165,7 @@ export function useAudioHotkeys({
         case "ControlLeft":
         case "ControlRight":
           e.preventDefault();
-          speakFeedback("Chức năng thu nhỏ cửa sổ đang phát triển");
+          triggerButtonByText("Thu nhỏ", "Đã bấm Thu nhỏ trình phát");
           break;
 
         default:
