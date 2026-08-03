@@ -104,6 +104,7 @@ function Header({ theme, onToggleTheme }) {
         <Link to="/" className="logo-section" onClick={() => setDropdownOpen(false)}>
           <img src="/images/logo/logo_hsv.png" alt="Logo Hội Sinh Viên" className="brand-logo" />
           <img src="/images/favicon.png" alt="DAISY Favicon" className="favicon-logo" />
+          <img src="/images/anhmattran.jpg" alt="Logo Mặt Trận" className="brand-logo" />
         </Link>
 
         <div className="header-actions">
