@@ -88,7 +88,9 @@ async function seed() {
     await clearTableIfExists(connection, 'books');
 
     console.log('Clearing existing users...');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     await connection.query('TRUNCATE TABLE users');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
 
     // Insert books
     console.log('Inserting books into the database...');
