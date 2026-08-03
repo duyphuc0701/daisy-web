@@ -1452,3 +1452,717 @@ body[data-theme='dark'] .site-header {
   color: var(--primary);
   font-weight: 600;
 }
+
+/* ============================================================
+   ACTIVITY PAGE — Trang Hoạt Động
+   ============================================================ */
+
+/* Page Layout */
+.activity-page {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* Page Header */
+.activity-page-header {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255, 255, 255, 0.4) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+body[data-theme='dark'] .activity-page-header {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15) 0%, rgba(30, 41, 59, 0.4) 100%);
+}
+
+.activity-page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--secondary);
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+.activity-page-subtitle {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+}
+
+.activity-page-subtitle strong {
+  color: var(--primary);
+}
+
+/* Section Wrapper */
+.activity-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Section Header */
+.activity-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.75rem;
+}
+
+.activity-section-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.activity-section-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.activity-section-heading {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.activity-section-count {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+/* Card List — removes list decoration and adds grid */
+.activity-card-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Activity Card (History) ────────────────────────── */
+.activity-card {
+  display: flex;
+  gap: 1.25rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+  align-items: flex-start;
+}
+
+.activity-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 148, 136, 0.3);
+  transform: translateY(-2px);
+}
+
+.activity-card-cover {
+  flex-shrink: 0;
+  width: 76px;
+  height: 110px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: #f1f5f9;
+  box-shadow: var(--shadow-sm);
+}
+
+.activity-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.activity-card-category {
+  display: inline-block;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.activity-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.4;
+  /* Clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.activity-card-author {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Progress Bar */
+.activity-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+}
+
+.activity-progress-track {
+  flex: 1;
+  height: 8px;
+  background-color: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.activity-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), hsl(171, 75%, 40%));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+  min-width: 4px; /* Always visible even at 0% */
+}
+
+.activity-progress-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Timestamp */
+.activity-card-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Card Actions Row */
+.activity-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.activity-card-btn {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  gap: 0.375rem;
+}
+
+/* Ghost / Icon-only delete button */
+.btn-ghost {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  font-size: 0.85rem;
+}
+
+.btn-ghost:hover {
+  background-color: hsl(0, 84%, 97%);
+  border-color: hsl(0, 84%, 80%);
+  color: hsl(0, 84%, 45%);
+}
+
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.activity-card-btn-delete {
+  /* Inherits .btn-ghost */
+}
+
+/* ── Saved Book Card (Library) ──────────────────────── */
+.saved-book-card {
+  display: flex;
+  gap: 1.25rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+  align-items: flex-start;
+}
+
+.saved-book-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(13, 148, 136, 0.3);
+  transform: translateY(-2px);
+}
+
+.saved-book-card-cover {
+  flex-shrink: 0;
+  width: 76px;
+  height: 110px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: #f1f5f9;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.saved-book-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.saved-book-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--primary);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.saved-book-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* ── Inline Delete Confirmation ──────────────────────── */
+.saved-book-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: hsl(35, 100%, 96%);
+  border: 1px solid hsl(35, 100%, 80%);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.75rem;
+  flex-wrap: wrap;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.saved-book-confirm-icon {
+  color: hsl(35, 100%, 35%);
+  flex-shrink: 0;
+}
+
+.saved-book-confirm-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: hsl(35, 100%, 30%);
+}
+
+.btn-danger-sm {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  background-color: hsl(0, 84%, 55%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-danger-sm:hover {
+  background-color: hsl(0, 84%, 45%);
+}
+
+.btn-danger-sm:focus-visible {
+  outline: 2px solid hsl(0, 84%, 55%);
+  outline-offset: 2px;
+}
+
+.btn-ghost-sm {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.625rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-ghost-sm:hover {
+  background-color: var(--border);
+  color: var(--text-main);
+}
+
+.btn-ghost-sm:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Loading State ──────────────────────────────────── */
+.activity-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background-color: var(--primary-light);
+  border: 1px solid rgba(13, 148, 136, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-weight: 550;
+  font-size: 0.95rem;
+}
+
+/* ── Error State ────────────────────────────────────── */
+.activity-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1.25rem;
+  background-color: hsl(0, 84%, 97%);
+  border: 1px solid hsl(0, 84%, 88%);
+  border-radius: var(--radius-md);
+  color: hsl(0, 84%, 40%);
+}
+
+.activity-error strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.activity-error p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ── Empty State ────────────────────────────────────── */
+.activity-empty {
+  text-align: center;
+  padding: 3.5rem 2rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+.activity-empty svg {
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.activity-empty h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.activity-empty p {
+  font-size: 0.95rem;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+/* ── Focus Visible indicators for all new buttons ───── */
+.activity-card-btn:focus-visible,
+.btn-primary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Responsive Adjustments ─────────────────────────── */
+@media (max-width: 480px) {
+  .activity-card,
+  .saved-book-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .activity-card-cover,
+  .saved-book-card-cover {
+    width: 100%;
+    height: 160px;
+  }
+
+  .activity-card-cover img,
+  .saved-book-card-cover img {
+    width: 100%;
+    object-position: top;
+  }
+}
+
+/* ── Save to Library Button on Book Detail ───────────── */
+.btn-save-library {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--primary);
+  background-color: var(--card-bg);
+  color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-sm);
+  margin-top: 0.5rem;
+}
+
+.btn-save-library:hover:not(:disabled) {
+  background-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-save-library.saved {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-save-library.saved:hover:not(:disabled) {
+  background-color: hsl(0, 84%, 97%);
+  border-color: hsl(0, 84%, 60%);
+  color: hsl(0, 84%, 40%);
+}
+
+.btn-save-library:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.btn-save-library:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.save-btn-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* ── Actions Group on Book Detail (Save + Favorite) ──── */
+.book-detail-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 0.5rem;
+}
+
+.btn-save-library,
+.btn-favorite-library {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-sm);
+  margin-top: 0;
+}
+
+/* Save button specific styling */
+.btn-save-library {
+  border: 2px solid var(--primary);
+  background-color: var(--card-bg);
+  color: var(--primary);
+}
+
+.btn-save-library:hover:not(:disabled) {
+  background-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-save-library.saved {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-save-library.saved:hover:not(:disabled) {
+  background-color: hsl(0, 84%, 97%);
+  border-color: hsl(0, 84%, 60%);
+  color: hsl(0, 84%, 40%);
+}
+
+/* Favorite button specific styling */
+.btn-favorite-library {
+  border: 2px solid hsl(340, 82%, 52%);
+  background-color: var(--card-bg);
+  color: hsl(340, 82%, 52%);
+}
+
+.btn-favorite-library:hover:not(:disabled) {
+  background-color: hsl(340, 82%, 96%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-favorite-library.favorited {
+  background-color: hsl(340, 82%, 52%);
+  border-color: hsl(340, 82%, 52%);
+  color: #ffffff;
+}
+
+.btn-favorite-library.favorited:hover:not(:disabled) {
+  background-color: hsl(340, 82%, 42%);
+  border-color: hsl(340, 82%, 42%);
+  color: #ffffff;
+}
+
+.btn-save-library:focus-visible,
+.btn-favorite-library:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.btn-save-library:disabled,
+.btn-favorite-library:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ── Favorite Book Card (Activity Page) ────────────────── */
+.favorite-book-card {
+  display: flex;
+  gap: 1.25rem;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+  align-items: flex-start;
+}
+
+.favorite-book-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(225, 29, 72, 0.3);
+  transform: translateY(-2px);
+}
+
+.favorite-book-card-cover {
+  flex-shrink: 0;
+  width: 76px;
+  height: 110px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: #f1f5f9;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.favorite-book-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.favorite-book-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: hsl(340, 82%, 52%);
+  color: white;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.favorite-book-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.activity-card-btn-favorite {
+  border-color: hsl(340, 82%, 85%);
+}
+
+.activity-card-btn-favorite:hover {
+  background-color: hsl(340, 82%, 96%);
+  border-color: hsl(340, 82%, 70%);
+  color: hsl(340, 82%, 45%);
+}
+
+/* ── Inline Favorite Delete Confirmation ──────────────── */
+.favorite-book-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: hsl(340, 82%, 97%);
+  border: 1px solid hsl(340, 82%, 85%);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.75rem;
+  flex-wrap: wrap;
+  animation: fadeIn 0.15s ease;
+}
+
+.favorite-book-confirm-icon {
+  color: hsl(340, 82%, 45%);
+  flex-shrink: 0;
+}
+
+.favorite-book-confirm-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: hsl(340, 82%, 35%);
+}
+
+

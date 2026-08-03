@@ -10,11 +10,13 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
-import { AuthProvider } from './context/AuthContext'
+import Activity from './pages/Activity'
+import { AuthProvider, useAuth } from './context/AuthContext'
 
 function AppContent() {
   const pathname = usePathname()
   const route = resolveRoute(pathname)
+  const { user } = useAuth()
   const [theme, setTheme] = useState(() => localStorage.getItem('daisy-theme') || 'light')
 
   useEffect(() => {
@@ -35,6 +37,8 @@ function AppContent() {
     page = <ForgotPassword />
   } else if (route.name === 'reset_password') {
     page = <ResetPassword token={route.params.token} />
+  } else if (route.name === 'activity') {
+    page = <Activity />
   }
 
   const isAuthPage = ['login', 'register', 'forgot_password', 'reset_password'].includes(route.name)
