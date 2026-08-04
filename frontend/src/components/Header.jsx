@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { ChevronDown, BookOpen } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 import SearchBar from './SearchBar'
 
 function Header() {
