@@ -74,6 +74,21 @@ function About() {
               </div>
             </div>
           </div>
+
+          {/* Summer 2026 */}
+          <div className="timeline-item timeline-item-left">
+            <div className="timeline-dot"></div>
+            <div className="timeline-card">
+              <h3 className="timeline-date">Mùa hè năm 2026</h3>
+              <p>
+                Đội hình Ánh sáng số - Mặt trận Mùa hè số tiếp tục cải thiện, nâng cấp website với giao diện đẹp hơn, 
+                tích hợp nhiều tính năng mới như phát audio trực tiếp trên web, mục yêu thích,... nhằm nâng cao trải nghiệm của độc giả khi tiếp cận tri thức.
+              </p>
+              <div className="timeline-media">
+                <img src="/images/doi_hinh_anh_sang_so.jpg" alt="Đội hình Ánh sáng số - Mặt trận Mùa hè số" />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
